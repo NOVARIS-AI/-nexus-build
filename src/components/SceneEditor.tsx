@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 type SceneObject = {
@@ -42,8 +42,6 @@ export default function SceneEditor() {
   const [selectedId, setSelectedId] = useState("car-1");
   const [mode, setMode] = useState<"move" | "rotate" | "scale">("move");
   const selected = objects.find(o => o.id === selectedId) ?? null;
-  const selectedRef = useRef(selectedId);
-  selectedRef.current = selectedId;
 
   useEffect(() => {
     if (!host.current) return;
