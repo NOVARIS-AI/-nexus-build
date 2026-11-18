@@ -110,3 +110,46 @@
 @media(max-width:520px){.toolchain{padding:12px;margin-top:20px}.toolchain-head{align-items:flex-start}.toolchain-count{font-size:7px}.asset-item{gap:6px}.asset-item button{padding:6px;font-size:8px}.asset-controls select{width:100px}.integration-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visual-builder{grid-template-columns:1fr}.visual-builder label:nth-child(3){grid-column:auto}.logic-node{gap:5px}.script-actions .build-btn{margin-left:0}}
 
 .asset-audio{width:150px;height:30px;max-width:30vw}
+
+.gameplay-studio{margin-top:30px;padding:18px;border:1px solid #403842;border-radius:13px;background:linear-gradient(145deg,#201d25,#17161c)}
+.gameplay-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:15px}
+.gameplay-head h2{font:600 19px 'Space Grotesk';margin:5px 0}.gameplay-head p{font-size:10px;color:#918b96;margin:0;line-height:1.5}
+.gameplay-state{font:8px 'DM Mono';letter-spacing:.7px;color:#d8ad80;white-space:nowrap}
+.gameplay-empty{padding:22px;border:1px dashed #514653;border-radius:8px;text-align:center;color:#aaa1ad;font-size:11px}
+.playtest-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,.8fr);gap:12px}
+.playtest-view{min-width:0;position:relative}
+.playtest-canvas{height:420px;min-height:310px;position:relative;overflow:hidden;border:1px solid #45404a;border-radius:9px;background:#a7c6d7}
+.playtest-canvas canvas{width:100%;height:100%;display:block}
+.playtest-overlay{position:absolute;z-index:1;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.playtest-overlay span{background:#15151bcc;border:1px solid #ffffff25;border-radius:5px;padding:7px 8px;color:#f0e8e1;font:8px 'DM Mono'}
+.playtest-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.playtest-actions button,.touch-pad button{border:1px solid #45404a;background:#29252e;color:#d4cbd5;border-radius:6px;padding:8px 11px;font-size:9px}
+.playtest-actions .build-btn{background:#dfaa72;border-color:#dfaa72;color:#201710;font-weight:700}
+.touch-pad{display:none;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.touch-pad>div{display:grid;grid-template-columns:repeat(3,38px);gap:4px}
+.touch-pad>div button{padding:9px 4px}.touch-pad>div button:nth-child(2){grid-column:2}
+.touch-pad>button{min-width:68px;min-height:36px}
+.touch-pad .interact-touch{background:#61452f;color:#ffe0ba;border-color:#8c6745}
+.touch-pad .jump-touch{background:#30394b;border-color:#4e617e}
+.npc-dialogue{margin-top:9px;padding:11px 13px;border:1px solid #70543d;background:#302820;border-radius:7px;color:#f0d4b5;font-size:10px;line-height:1.5}
+.gameplay-side{display:grid;align-content:start;gap:9px;min-width:0}
+.gameplay-card{padding:12px;background:#211f26;border:1px solid #3b3540;border-radius:8px}
+.gameplay-card>b{display:block;font:600 11px 'Space Grotesk';color:#eee5ed}
+.gameplay-card>small{display:block;margin-top:4px;color:#8e8792;font-size:8px;line-height:1.5}
+.mission-row,.npc-row{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid #37313b}
+.mission-row:last-child,.npc-row:last-child{border-bottom:0}
+.mission-check{width:17px;height:17px;flex-shrink:0;border:1px solid #726579;border-radius:50%;display:grid;place-items:center;color:#aaa;font-size:9px}
+.mission-check.done{border-color:#76b58b;background:#284233;color:#a6dfb5}
+.mission-row>div,.npc-row>div{min-width:0}
+.mission-row b,.npc-row b{display:block;font-size:9px;color:#ddd5df}
+.mission-row small,.npc-row small{display:block;margin-top:3px;font-size:8px;color:#89828d;line-height:1.4}
+.npc-dot{width:8px;height:8px;flex-shrink:0;margin:3px 4px;border-radius:50%;background:#a7b4e7;box-shadow:0 0 10px #a7b4e755}
+.inline-add{display:flex;gap:5px;margin-top:9px}
+.inline-add input{flex:1;min-width:0;background:#141319;border:1px solid #39343e;border-radius:5px;padding:8px;color:#eee;font-size:9px}
+.inline-add button{width:34px;border:1px solid #70543d;border-radius:5px;background:#3a2d28;color:#f1c18e}
+.inline-add button:disabled{opacity:.4}
+.gameplay-foot{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.gameplay-foot span{font:8px 'DM Mono';color:#a49ba5;border:1px solid #39343e;border-radius:5px;padding:7px}
+.gameplay-message{margin-top:9px;color:#a9cbaa;font-size:9px;line-height:1.5}
+@media(max-width:850px){.playtest-layout{grid-template-columns:1fr}.gameplay-side{grid-template-columns:repeat(2,minmax(0,1fr))}.gameplay-side .gameplay-card:last-child{grid-column:1/-1}}
+@media(max-width:520px){.gameplay-studio{padding:12px;margin-top:20px}.gameplay-head{align-items:flex-start;flex-direction:column}.playtest-canvas{height:340px;min-height:280px}.playtest-overlay{flex-direction:column;align-items:flex-start}.touch-pad{display:flex}.gameplay-side{grid-template-columns:1fr}.gameplay-side .gameplay-card:last-child{grid-column:auto}.playtest-actions button{flex:1}}
