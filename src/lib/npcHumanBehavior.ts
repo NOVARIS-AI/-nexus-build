@@ -33,10 +33,10 @@ function propActivity(prop: HumanProp | undefined, role: string, routine: string
   return null;
 }
 
-export function tickHumanState(state: HumanState, dt: number, elapsed: number, role: string, routine: string, nearbyProp?: HumanProp, social = false, playerNearby = false): HumanActivity {
+export function tickHumanState(state: HumanState, dt: number, elapsed: number, role: string, routine: string, nearbyProp?: HumanProp, social = false, playerNearby = false, moving = false): HumanActivity {
   state.hunger = Math.min(1, state.hunger + dt * .0022);
   state.thirst = Math.min(1, state.thirst + dt * .0031);
-  if (state.activity === "walk") state.energy = Math.max(0, state.energy - dt * .006);
+  if (moving) state.energy = Math.max(0, state.energy - dt * .006);
   else state.energy = Math.min(1, state.energy + dt * (state.activity === "sleep" ? .09 : .018));
   if (social) { state.activity = "talk"; state.remaining = Math.max(state.remaining, .4); return state.activity; }
   if (playerNearby) { if (state.activity === "talk") state.activity = "idle"; return state.activity; }
