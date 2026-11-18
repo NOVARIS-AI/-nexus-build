@@ -312,3 +312,51 @@
 .nexus-humanforge-retry:hover{background:#4a3b31}
 .nexus-humanforge-retry:focus-visible{outline:2px solid #e2bd91;outline-offset:3px}
 @media(max-width:700px){.nexus-humanforge .hf-editor{height:720px;min-height:720px}.nexus-humanforge .hf-stage{min-height:250px}.nexus-humanforge .hf-panel{min-height:0}.nexus-humanforge .hf-controls{max-height:340px}}
+
+
+/* Free NPC production hub */
+.npc-production-hub{margin-top:14px;padding:18px;border:1px solid #3a343e;border-radius:13px;background:linear-gradient(145deg,#1d1a22,#17161c)}
+.npc-production-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.npc-production-heading h2{margin:5px 0;font:600 19px 'Space Grotesk';color:#f0e8ef}
+.npc-production-heading p{max-width:680px;margin:0;color:#918a96;font-size:10px;line-height:1.6}
+.npc-production-count{font:8px 'DM Mono';letter-spacing:.7px;color:#d6ad82;white-space:nowrap}
+.npc-production-controls{display:grid;gap:9px;margin-bottom:12px}
+.npc-production-controls>input{width:100%;min-width:0;padding:10px 12px;border:1px solid #403943;border-radius:7px;background:#141319;color:#eee;font:10px 'DM Sans'}
+.npc-production-filters{display:flex;gap:5px;overflow:auto;padding-bottom:2px}
+.npc-production-filters button{white-space:nowrap;padding:7px 10px;border:1px solid #3c3540;border-radius:18px;background:#242128;color:#aaa1ad;font-size:8px}
+.npc-production-filters button.active{border-color:#9b7655;background:#3a302b;color:#f0c18e}
+.npc-production-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.npc-tool-card{min-width:0;padding:12px;border:1px solid #39343d;border-radius:9px;background:#211f26}
+.npc-tool-card.selected{border-color:#a78360;box-shadow:inset 0 0 0 1px #a7836033}
+.npc-tool-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.npc-tool-number{font:9px 'DM Mono';color:#d6aa7b}
+.npc-tool-category{font:7px 'DM Mono';letter-spacing:.5px;color:#a89eaa;border:1px solid #45404a;border-radius:20px;padding:4px 7px}
+.npc-tool-card h3{margin:10px 0 5px;color:#eee6ef;font:600 13px 'Space Grotesk'}
+.npc-tool-card>p{min-height:43px;margin:0;color:#9a929e;font-size:9px;line-height:1.55}
+.npc-tool-access{margin-top:9px;color:#d2ac85;font-size:8px}
+.npc-tool-formats{display:grid;gap:3px;margin-top:8px;padding-top:8px;border-top:1px solid #38323c}
+.npc-tool-formats b{font:7px 'DM Mono';letter-spacing:.7px;color:#827b87;text-transform:uppercase}
+.npc-tool-formats span{color:#b9b0bd;font-size:8px;line-height:1.5;overflow-wrap:anywhere}
+.npc-tool-actions{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:10px}
+.npc-tool-actions button,.npc-tool-actions a{border:1px solid #51434a;border-radius:6px;padding:7px 9px;background:#302a30;color:#e7bd91;text-decoration:none;font:8px 'DM Sans'}
+.npc-tool-actions button:hover,.npc-tool-actions a:hover{border-color:#c39a70}
+.npc-tool-actions a{background:transparent;color:#c7bdc9}
+.npc-tool-empty{grid-column:1/-1;padding:20px;text-align:center;border:1px dashed #514653;border-radius:8px;color:#a49ba7;font-size:10px}
+.npc-pipeline-card{margin-top:12px;padding:13px;border:1px solid #4a3c34;border-radius:9px;background:linear-gradient(145deg,#292322,#201e25)}
+.npc-pipeline-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.npc-pipeline-heading h3{margin:5px 0 0;color:#f0e7e0;font:600 13px 'Space Grotesk'}
+.npc-pipeline-state{font:7px 'DM Mono';color:#b8cba9;letter-spacing:.6px}
+.npc-pipeline-description{margin:8px 0;color:#a69ba0;font-size:9px;line-height:1.55}
+.npc-pipeline-steps{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:11px 0}
+.npc-pipeline-steps span{display:flex;align-items:center;gap:6px;color:#cfc4cd;font-size:8px}
+.npc-pipeline-steps span b{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#4a382d;color:#efc18d;font:8px 'DM Mono'}
+.npc-pipeline-steps i{color:#8d7968;font-style:normal;font-size:10px}
+.npc-pipeline-instruction{padding:10px;border-radius:6px;background:#19171e;color:#d1c4b8;font-size:9px;line-height:1.6}
+.npc-pipeline-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:#938995;font-size:8px}
+.npc-pipeline-footer b{color:#e2b27d}
+.npc-pipeline-footer button{border:1px solid #5a493b;border-radius:6px;background:#352b27;color:#eac18f;padding:7px 9px;font-size:8px;white-space:nowrap}
+.npc-production-notice{margin-top:10px;padding:11px;border:1px solid #3d3942;border-radius:8px;background:#1b1920}
+.npc-production-notice>b{color:#dfb17f;font:600 9px 'Space Grotesk'}
+.npc-production-notice p{margin:5px 0 0;color:#938c98;font-size:8px;line-height:1.65}
+.npc-production-notice p b{color:#cbb9a4}
+@media(max-width:560px){.npc-production-hub{padding:12px}.npc-production-heading{align-items:flex-start;flex-direction:column}.npc-production-grid{grid-template-columns:1fr}.npc-tool-card>p{min-height:0}.npc-pipeline-footer{align-items:flex-start;flex-direction:column}.npc-pipeline-steps{gap:5px}.npc-pipeline-steps i{display:none}}
