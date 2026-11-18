@@ -53,3 +53,5 @@
 .editor-footnote{margin-top:14px;padding-top:10px;border-top:1px solid #343039;color:#77717c;font-size:8px;line-height:1.6}
 @media(max-width:850px){.scene-editor{grid-template-columns:1fr}.scene-inspector{border-left:0;border-top:1px solid #39343d}.object-list{max-height:125px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.scene-inspector .properties{margin-top:12px}}
 @media(max-width:520px){.scene-viewport .world{min-height:290px}.scene-toolbar button{flex:1}.object-list{grid-template-columns:1fr 1fr}.scene-inspector{padding:12px}}
+
+.scene-toolbar button:disabled{opacity:.4;cursor:not-allowed}.scene-save-message{display:block;margin-top:6px;color:#a9cbaa;line-height:1.5}.editor-footnote{overflow-wrap:anywhere}
