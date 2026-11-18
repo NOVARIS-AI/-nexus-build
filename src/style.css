@@ -24,3 +24,32 @@
 .saved-project-delete{border:0;background:transparent;color:#918a94;font-size:18px;padding:3px 7px}
 .saved-project-delete:hover{color:#e49a8f}
 @media(max-width:520px){.project-manager{padding:13px}.project-manager-head{align-items:flex-start;flex-direction:column}.project-save-row{align-items:flex-start;flex-direction:column}.project-save-row .build-btn{width:100%}}
+
+.scene-editor{display:grid;grid-template-columns:minmax(0,1fr) 245px;border:1px solid #38343d;border-radius:10px;overflow:hidden;min-height:430px;background:#17161c}
+.scene-viewport{min-width:0;position:relative;display:flex;flex-direction:column}
+.scene-viewport .world{flex:1;min-height:365px}
+.scene-toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:9px 11px;border-top:1px solid #39343d;background:#1b1a20}
+.scene-toolbar button,.transform-tabs button{border:1px solid #403a44;background:#242128;color:#aaa2ad;border-radius:6px;padding:7px 10px;font-size:9px}
+.scene-toolbar button.tool-active,.transform-tabs button.transform-active{border-color:#bd936b;background:#3b302b;color:#f1c18e}
+.scene-inspector{background:#19181e;border-left:1px solid #39343d;padding:14px 12px;min-width:0}
+.scene-inspector .inspector-title{font:9px 'DM Mono';letter-spacing:1px;color:#a49ba5;padding-bottom:11px;border-bottom:1px solid #343039}
+.scene-inspector .inspector-title span{float:right;color:#d6aa7d;font-size:8px}
+.object-list{max-height:170px;overflow:auto;padding:6px 0;border-bottom:1px solid #343039}
+.object-row{display:flex;align-items:center;gap:9px;width:100%;border:0;border-radius:5px;background:transparent;color:#aaa3ad;text-align:left;padding:7px 8px;font-size:10px}
+.object-row>span{color:#d3a77b;width:13px}
+.object-row.object-selected{background:#342d32;color:#f0c18e}
+.scene-inspector .properties{margin-top:14px}
+.selected-object{padding:11px 4px 9px}
+.selected-object small{display:block;color:#77717c;font:8px 'DM Mono';letter-spacing:1px;margin-bottom:6px}
+.selected-object b{display:block;color:#e7dfe8;font-size:12px}
+.selected-object span{display:inline-block;margin-top:6px;color:#c39b76;font:8px 'DM Mono';letter-spacing:1px}
+.transform-tabs{display:flex;gap:4px;margin:6px 0 10px}
+.transform-tabs button{flex:1;text-transform:capitalize;padding:7px 4px}
+.transform-control{display:grid;grid-template-columns:1fr 90px;align-items:center;gap:8px;padding:6px 3px;color:#938d98;font-size:9px}
+.transform-control input{width:100%;min-width:0;border:1px solid #39343d;background:#111116;color:#eee;padding:7px;border-radius:5px;font:10px 'DM Mono'}
+.delete-object{width:100%;margin-top:10px;padding:8px;border:1px solid #69423e;background:#302020;color:#e5a39a;border-radius:6px;font-size:9px}
+.delete-object:disabled{opacity:.35}
+.empty-inspector{padding:14px 4px;color:#8d8791;font-size:10px}
+.editor-footnote{margin-top:14px;padding-top:10px;border-top:1px solid #343039;color:#77717c;font-size:8px;line-height:1.6}
+@media(max-width:850px){.scene-editor{grid-template-columns:1fr}.scene-inspector{border-left:0;border-top:1px solid #39343d}.object-list{max-height:125px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.scene-inspector .properties{margin-top:12px}}
+@media(max-width:520px){.scene-viewport .world{min-height:290px}.scene-toolbar button{flex:1}.object-list{grid-template-columns:1fr 1fr}.scene-inspector{padding:12px}}
