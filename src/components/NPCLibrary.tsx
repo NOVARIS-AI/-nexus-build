@@ -249,7 +249,7 @@ export default function NPCLibrary() {
     <div className="npc-tools-strip">
       <div><b>More free character tools</b><p>Extra tools for creating assets and bringing them into your game workflow.</p></div>
       <a href="https://www.makehumancommunity.org/" target="_blank" rel="noreferrer">MakeHuman <small>Desktop character creator</small></a>
-      <a href="https://static.makehumancommunity.org/mpfb.html" target="_blank" rel="noreferrer">MPFB for Blender <small>Blender human creation add-on</small></a>
+      <a href="https://static.makehumancommunity.org/mpfb/index.html" target="_blank" rel="noreferrer">MPFB for Blender <small>Blender human creation add-on</small></a>
       <a href="https://github.com/abdulrehman043/humanforge" target="_blank" rel="noreferrer">HumanForge <small>Open-source avatar SDK · experimental</small></a>
     </div>
 
