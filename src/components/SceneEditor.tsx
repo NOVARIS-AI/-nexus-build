@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { projectApi, type Project } from "../api";
 
 type SceneObject = {
   id: string;
@@ -33,7 +34,9 @@ function makeMesh(item: SceneObject) {
   return mesh;
 }
 
-export default function SceneEditor() {
+type Props = { project: Project | null; onProjectUpdated: (project: Project) => void };
+
+export default function SceneEditor({ project, onProjectUpdated }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -41,7 +44,44 @@ export default function SceneEditor() {
   const [objects, setObjects] = useState<SceneObject[]>(initialObjects);
   const [selectedId, setSelectedId] = useState("car-1");
   const [mode, setMode] = useState<"move" | "rotate" | "scale">("move");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const selected = objects.find(o => o.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (!project) { setObjects(initialObjects); setSelectedId("car-1"); return; }
+    try {
+      const saved = JSON.parse(project.scene_json || "{}") as SceneObject[] | { objects?: SceneObject[] };
+      const restored = Array.isArray(saved) ? saved : saved.objects;
+      if (restored && Array.isArray(restored) && restored.length) {
+        setObjects(restored);
+        setSelectedId(restored.some(item => item.id === "car-1") ? "car-1" : restored[0].id);
+      } else {
+        setObjects(initialObjects);
+        setSelectedId("car-1");
+      }
+      setSaveMessage("");
+    } catch {
+      setObjects(initialObjects);
+      setSelectedId("car-1");
+      setSaveMessage("Saved scene data could not be read; showing the starter scene.");
+    }
+  }, [project?.id]);
+  
+  const saveScene = async () => {
+    if (!project || saving) return;
+    setSaving(true);
+    setSaveMessage("");
+    try {
+      const updated = await projectApi.update(project.id, { scene_json: JSON.stringify(objects) });
+      onProjectUpdated(updated);
+      setSaveMessage("Scene saved to this project.");
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "Could not save scene.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!host.current) return;
@@ -141,7 +181,7 @@ export default function SceneEditor() {
         <button className={mode === "move" ? "tool-active" : ""} onClick={() => setMode("move")}>↔ Move</button>
         <button className={mode === "rotate" ? "tool-active" : ""} onClick={() => setMode("rotate")}>⟳ Rotate</button>
         <button className={mode === "scale" ? "tool-active" : ""} onClick={() => setMode("scale")}>⤢ Scale</button>
-        <button onClick={addCube}>＋ Add cube</button>
+        <button onClick={addCube}>＋ Add cube</button>\n        <button onClick={() => void saveScene()} disabled={!project || saving}>{saving ? "Saving…" : "Save scene"}</button>
       </div>
     </div>
     <aside className="scene-inspector">
@@ -154,7 +194,7 @@ export default function SceneEditor() {
         {labels.map((label, axis) => <label className="transform-control" key={label}><span>{label}</span><input type="number" step={ranges[2]} min={ranges[0]} max={ranges[1]} value={Number(values[axis].toFixed(2))} onChange={e => update(fields[axis], axis as 0|1|2, Number(e.target.value))}/></label>)}
         <button className="delete-object" onClick={removeSelected} disabled={selected.kind === "road"}>Remove selected object</button>
       </> : <div className="empty-inspector">Select an object in the scene or hierarchy.</div>}
-      <div className="editor-footnote">Prototype editor · Scene changes are currently held in this session. Cloud scene saving is the next persistence upgrade.</div>
+      <div className="editor-footnote">{project ? `Editing: ${project.name}` : "Save a project above to enable cloud scene saving."} {saveMessage && <span className="scene-save-message">{saveMessage}</span>}</div>
     </aside>
   </div>;
 }
