@@ -153,3 +153,43 @@
 .gameplay-message{margin-top:9px;color:#a9cbaa;font-size:9px;line-height:1.5}
 @media(max-width:850px){.playtest-layout{grid-template-columns:1fr}.gameplay-side{grid-template-columns:repeat(2,minmax(0,1fr))}.gameplay-side .gameplay-card:last-child{grid-column:1/-1}}
 @media(max-width:520px){.gameplay-studio{padding:12px;margin-top:20px}.gameplay-head{align-items:flex-start;flex-direction:column}.playtest-canvas{height:340px;min-height:280px}.playtest-overlay{flex-direction:column;align-items:flex-start}.touch-pad{display:flex}.gameplay-side{grid-template-columns:1fr}.gameplay-side .gameplay-card:last-child{grid-column:auto}.playtest-actions button{flex:1}}
+
+.gameplay-studio{margin:28px 0;padding:18px;border:1px solid #393943;border-radius:13px;background:linear-gradient(145deg,#1b2023,#17191d);color:#eee}
+.gameplay-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:15px}
+.gameplay-head h2{font:600 19px 'Space Grotesk';margin:5px 0}.gameplay-head p{font-size:10px;color:#92999a;margin:0;line-height:1.5}
+.gameplay-state{font:8px 'DM Mono';letter-spacing:.7px;color:#c4a27e;white-space:nowrap}
+.gameplay-empty{padding:20px;text-align:center;border:1px dashed #4b5050;border-radius:8px;color:#a8b0ae;font-size:10px}
+.playtest-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(210px,.8fr);gap:12px}
+.playtest-view{min-width:0}
+.playtest-canvas{height:390px;min-height:280px;position:relative;overflow:hidden;border-radius:9px;background:#9ebdce;border:1px solid #41484a}
+.playtest-canvas canvas{display:block;width:100%;height:100%;outline:none}
+.playtest-overlay{position:absolute;z-index:2;top:9px;left:9px;right:9px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.playtest-overlay span{background:#111a20bb;border:1px solid #ffffff26;border-radius:5px;padding:6px 8px;color:#f1e9dc;font:7px 'DM Mono'}
+.playtest-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.playtest-actions button{background:#292e31;border:1px solid #4a5050;border-radius:6px;color:#ddd;padding:8px 10px;font-size:9px}
+.playtest-actions .build-btn{background:#b58c67;color:#181614;border-color:#b58c67}
+.touch-pad{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.touch-pad>button,.touch-pad div button{min-width:42px;min-height:36px;border:1px solid #51585a;border-radius:7px;background:#292f32;color:#eee;font-size:11px;touch-action:none}
+.touch-pad div{display:flex;gap:5px}
+.touch-pad .interact-touch{padding:0 13px;color:#e5bd91;font-size:8px;letter-spacing:.5px}
+.touch-pad .jump-touch{padding:0 12px;font-size:8px}
+.npc-dialogue{margin-top:9px;padding:11px;border-left:3px solid #d3a477;border-radius:5px;background:#29252a;color:#e9d6c2;font-size:10px;line-height:1.5}
+.gameplay-side{display:grid;align-content:start;gap:9px;min-width:0}
+.gameplay-card{padding:12px;background:#22272a;border:1px solid #3c4446;border-radius:8px}
+.gameplay-card>b{display:block;font:600 11px 'Space Grotesk'}
+.gameplay-card>small{display:block;color:#929b9c;font-size:8px;line-height:1.5;margin:5px 0 9px}
+.mission-row,.npc-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid #363d3f}
+.mission-row>div,.npc-row>div{min-width:0;flex:1}
+.mission-row b,.npc-row b{display:block;font-size:9px}
+.mission-row small,.npc-row small{display:block;color:#92999b;font-size:8px;line-height:1.4;margin-top:3px}
+.mission-check{color:#b5a47f;font-size:12px}.mission-check.done{color:#83c69b}
+.npc-dot{width:8px;height:8px;border-radius:50%;background:#91b6a0;margin:3px 2px 0}
+.inline-add{display:flex;gap:5px;margin-top:9px}
+.inline-add input{min-width:0;flex:1;background:#171b1d;border:1px solid #434a4b;border-radius:5px;color:#eee;padding:8px;font-size:9px}
+.inline-add button{width:31px;border:1px solid #62513f;background:#3c3027;color:#e7bd91;border-radius:5px}
+.inline-add button:disabled{opacity:.4}
+.gameplay-foot{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.gameplay-foot span{font:7px 'DM Mono';color:#99a09f;padding:6px 8px;background:#22272a;border-radius:5px}
+.gameplay-message{font-size:9px;color:#b5c9b7;margin-top:9px}
+@media(max-width:760px){.playtest-layout{grid-template-columns:1fr}.playtest-canvas{height:330px}.gameplay-head{flex-direction:column}}
+@media(max-width:440px){.gameplay-studio{padding:12px}.playtest-canvas{height:285px}.playtest-overlay{flex-direction:column;align-items:flex-start}.playtest-actions button{font-size:8px;padding:7px}.touch-pad{gap:5px}}
