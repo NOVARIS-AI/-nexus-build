@@ -5,10 +5,12 @@ import type { HumanConfig } from "humanforge/human";
 const HUMAN_ASSETS = "https://cdn.jsdelivr.net/gh/abdulrehman043/humanforge@v0.5.0/assets/human";
 const SAVE_KEY = "nexus-build-character-studio-v1";
 
-function readSavedConfig(): Partial<HumanConfig> | undefined {
+type SavedCharacter = Partial<HumanConfig> | { config: Partial<HumanConfig>; savedAt?: string };
+
+function readSavedConfig(): SavedCharacter | undefined {
   try {
     const value = localStorage.getItem(SAVE_KEY);
-    return value ? JSON.parse(value) as Partial<HumanConfig> : undefined;
+    return value ? JSON.parse(value) as SavedCharacter : undefined;
   } catch {
     return undefined;
   }
@@ -19,7 +21,7 @@ export default function HumanForgeStudio() {
   const [saved, setSaved] = useState(() => !!readSavedConfig());
   const [message, setMessage] = useState("Your edits stay in the editor until you save them.");
 
-  const saveCharacter = (config: HumanConfig, snapshot: string | null) => {
+  const saveCharacter = (config: HumanConfig, _snapshot: string | null) => {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({ config, savedAt: new Date().toISOString() }));
       setSaved(true);
