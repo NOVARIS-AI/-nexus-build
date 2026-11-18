@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { projectApi, type Project } from "../api";
 
-type Props = { prompt: string; onLoadPrompt: (prompt: string) => void };
+type Props = { prompt: string; onLoadPrompt: (prompt: string) => void; onSelectProject: (project: Project) => void };
 
-export default function ProjectManager({ prompt, onLoadPrompt }: Props) {
+export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -31,7 +31,8 @@ export default function ProjectManager({ prompt, onLoadPrompt }: Props) {
     setMessage("");
     try {
       const title = prompt.trim().split(/\s+/).slice(0, 7).join(" ").slice(0, 58);
-      await projectApi.create({ name: title || "Untitled project", description: "Created in Nexus Build", prompt: prompt.trim() });
+      const project = await projectApi.create({ name: title || "Untitled project", description: "Created in Nexus Build", prompt: prompt.trim(), scene_json: "{}" });
+      onSelectProject(project);
       setMessage("Project saved to your Cloudflare database.");
       await refresh();
     } catch (error) {
@@ -65,7 +66,7 @@ export default function ProjectManager({ prompt, onLoadPrompt }: Props) {
       {loading ? <div className="project-empty">Connecting to your workspace…</div> :
         projects.length === 0 ? <div className="project-empty">No saved projects yet. Save your first game idea above.</div> :
         projects.map(project => <div className="saved-project" key={project.id}>
-          <button className="saved-project-open" onClick={() => onLoadPrompt(project.prompt)} title="Load this idea into the Game Director">
+          <button className="saved-project-open" onClick={() => { onLoadPrompt(project.prompt); onSelectProject(project); }} title="Load this idea into the Game Director">
             <span className="saved-project-icon">◇</span>
             <span><b>{project.name}</b><small>{new Date(project.updated_at).toLocaleString()} · {project.status}</small></span>
           </button>
