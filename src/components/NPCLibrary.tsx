@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import HumanForgeStudio from "./HumanForgeStudio";
 
 type CharacterSettings = {
   preset: string;
@@ -90,7 +91,7 @@ function validAraShare(value: string) {
   }
 }
 
-export default function NPCLibrary() {
+function AraCharacterStudio() {
   const host = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Preparing 3D preview…");
   const [attempt, setAttempt] = useState(0);
@@ -258,5 +259,17 @@ export default function NPCLibrary() {
       <b>Growing the NPC catalogue</b>
       <p>One real 3D sample is connected now. The long-term target is a large searchable library of reusable characters, with one interactive preview at a time to keep mobile performance manageable.</p>
     </div>
+  </section>;
+}
+
+
+export default function NPCLibrary() {
+  const [studio, setStudio] = useState<"humanforge" | "ara">("humanforge");
+  return <section className="npc-library-shell">
+    <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
+      <button type="button" role="tab" aria-selected={studio === "humanforge"} className={studio === "humanforge" ? "active" : ""} onClick={() => setStudio("humanforge")}>In-app Human Creator</button>
+      <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>
+    </div>
+    {studio === "humanforge" ? <HumanForgeStudio /> : <AraCharacterStudio />}
   </section>;
 }
