@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import ProjectManager from "./components/ProjectManager";
 
 const starterPrompts = ["Build a lively Lagos street with danfo buses and market stalls","Create a fantasy island with a village, forest and hidden temple","Make a neon racing game with checkpoints and drifting"];
 
@@ -56,6 +57,7 @@ export default function App(){
           <div className="prompt-foot"><span>Be as imaginative as you like.</span><button className="build-btn" onClick={build} disabled={!prompt.trim()}>✦ Generate game plan <span>↗</span></button></div>
           <div className="suggestions">{starterPrompts.map(p=><button key={p} onClick={()=>setPrompt(p)}>{p} <span>↗</span></button>)}</div>
           {built&&<div className="notice"><b>Idea captured.</b> Your prompt is ready for the next AI-planning stage. The current preview is a procedural 3D blockout; full AI asset generation and game export are not connected yet.</div>}
+        <ProjectManager prompt={prompt} onLoadPrompt={setPrompt} />
         </section>
         <div className="section-row"><div><h2>World editor</h2><p>Explore your scene foundation</p></div><div className="editor-tabs">{["World","Assets","Logic"].map(t=><button className={tab===t?"selected":""} key={t} onClick={()=>setTab(t)}>{t}</button>)}</div></div>
         <div className="editor"><div className="viewport"><WorldPreview/></div><aside className="inspector"><div className="inspector-title">SCENE HIERARCHY <span>＋</span></div><div className="tree selected-tree">⌄ ◫ <b>{tab==="World"?"World Scene":tab==="Assets"?"Asset Library":"Game Logic"}</b></div>{(tab==="World"?["▧ Environment","▧ Buildings (10)","♧ Trees (7)","▰ Roads","◇ Lighting"]:tab==="Assets"?["◇ Primitive meshes","▧ Materials","♧ Nature pack","▱ Buildings pack"]:["⚡ Player controller","◎ Interaction system","◈ Mission system"]).map(x=><div className="tree-item" key={x}>{x}</div>)}<div className="inspector-title properties">INSPECTOR</div><div className="property"><small>OBJECT</small><b>{tab==="World"?"World Scene":tab==="Assets"?"Asset Library":"Game Logic"}</b></div><div className="property"><small>STATUS</small><span className="status">● Prototype scene</span></div><div className="property"><small>ENGINE</small><b>Three.js · Web preview</b></div><div className="property"><small>NEXT MILESTONE</small><span>Editable transforms & scene saving</span></div></aside></div>
