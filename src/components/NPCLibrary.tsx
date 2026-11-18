@@ -1,42 +1,48 @@
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
+import { useEffect, useRef, useState } from "react";
 
 export default function NPCLibrary(){
  const host=useRef<HTMLDivElement>(null);
+ const [status,setStatus]=useState("Loading real 3D character…");
  useEffect(()=>{
-  const el=host.current;if(!el)return;
-  const scene=new THREE.Scene();scene.background=new THREE.Color("#20232a");
-  const camera=new THREE.PerspectiveCamera(34,1,.1,50);camera.position.set(3.1,2.2,4.8);camera.lookAt(0,1,0);
-  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;el.appendChild(renderer.domElement);
-  scene.add(new THREE.HemisphereLight(0xe8f0ff,0x51433b,2));
-  const key=new THREE.DirectionalLight(0xffd5a8,3);key.position.set(3,6,4);key.castShadow=true;scene.add(key);
-  const fill=new THREE.PointLight(0x9bafe8,1.2);fill.position.set(-3,2,1);scene.add(fill);
-  const floor=new THREE.Mesh(new THREE.CircleGeometry(2.1,48),new THREE.MeshStandardMaterial({color:"#34343d",roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.035;floor.receiveShadow=true;scene.add(floor);
-  const bodyMat=new THREE.MeshStandardMaterial({color:"#bd8054",roughness:.8}),cloth=new THREE.MeshStandardMaterial({color:"#d7a64f",roughness:.9}),dark=new THREE.MeshStandardMaterial({color:"#292b35",roughness:.9}),skin=new THREE.MeshStandardMaterial({color:"#986344",roughness:.82}),shoe=new THREE.MeshStandardMaterial({color:"#24232a",roughness:.95});
-  const person=new THREE.Group();scene.add(person);
-  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.31,.62,5,12),cloth);torso.position.y=1.13;torso.castShadow=true;person.add(torso);
-  const apron=new THREE.Mesh(new THREE.BoxGeometry(.43,.53,.055),bodyMat);apron.position.set(0,1.02,.275);apron.castShadow=true;person.add(apron);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.235,20,16),skin);head.position.y=1.78;head.castShadow=true;person.add(head);
-  const hair=new THREE.Mesh(new THREE.SphereGeometry(.24,20,12,0,Math.PI*2,0,Math.PI*.52),dark);hair.position.y=1.84;hair.castShadow=true;person.add(hair);
-  const legGeo=new THREE.CylinderGeometry(.105,.12,.68,12);for(const x of [-.14,.14]){const leg=new THREE.Mesh(legGeo,dark);leg.position.set(x,.43,0);leg.castShadow=true;person.add(leg);const foot=new THREE.Mesh(new THREE.BoxGeometry(.2,.12,.32),shoe);foot.position.set(x,.1,.07);foot.castShadow=true;person.add(foot);}
-  const armGeo=new THREE.CapsuleGeometry(.095,.48,4,8);for(const x of [-.39,.39]){const arm=new THREE.Mesh(armGeo,cloth);arm.position.set(x,1.19,0);arm.rotation.z=x<0?-.12:.12;arm.castShadow=true;person.add(arm);}
-  const badge=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.035),dark);badge.position.set(.14,1.34,.29);person.add(badge);
-  const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);};resize();const observer=new ResizeObserver(resize);observer.observe(el);
-  let raf=0,active=true;const animate=()=>{if(!active)return;raf=requestAnimationFrame(animate);person.rotation.y+=.004;renderer.render(scene,camera);};animate();
-  return()=>{active=false;cancelAnimationFrame(raf);observer.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();const m=o.material;if(Array.isArray(m))m.forEach(x=>x.dispose());else m.dispose();}});renderer.dispose();el.innerHTML="";};
+  let cancelled=false;
+  const mount=()=>{
+   if(cancelled||!host.current)return;
+   const character=document.createElement("ara-character");
+   character.setAttribute("preset","The Female Executive");
+   character.setAttribute("animation","idle, look_around, talk_gestures");
+   character.setAttribute("expression","happy");
+   character.setAttribute("detail","high");
+   character.setAttribute("background","#24232c");
+   character.setAttribute("auto-rotate","");
+   character.setAttribute("zoom","");
+   character.style.width="100%";
+   character.style.height="100%";
+   character.addEventListener("load",()=>setStatus("REAL 3D MODEL · RIGGED · ANIMATED"),{once:true});
+   character.addEventListener("error",()=>setStatus("3D model could not load · check your connection"),{once:true});
+   host.current.replaceChildren(character);
+  };
+  let script=document.querySelector<HTMLScriptElement>('script[data-ara-embed="true"]');
+  if(customElements.get("ara-character")) mount();
+  else if(script){script.addEventListener("load",mount,{once:true});}
+  else{
+   script=document.createElement("script");script.type="module";script.src="https://cdn.jsdelivr.net/npm/ara3d@0/dist/embed.js";script.dataset.araEmbed="true";script.addEventListener("load",mount,{once:true});script.addEventListener("error",()=>setStatus("Could not load the 3D character engine"),{once:true});document.head.appendChild(script);
+  }
+  return()=>{cancelled=true;if(host.current)host.current.replaceChildren();};
  },[]);
  return <section className="npc-library">
-  <div className="npc-library-head"><div><div className="eyebrow">CHARACTER ASSET LIBRARY</div><h2>NPC Library</h2><p>Ready-made characters developers can choose to add to their own games. Nothing is inserted automatically.</p></div><span className="npc-library-count">STARTER PREVIEW · 1 ASSET</span></div>
+  <div className="npc-library-head"><div><div className="eyebrow">CHARACTER ASSET LIBRARY</div><h2>NPC Library</h2><p>Real, reusable 3D characters for game projects. Developers choose which NPCs to add; nothing is placed automatically.</p></div><span className="npc-library-count">LIVE 3D CHARACTER PREVIEW</span></div>
   <div className="npc-library-grid">
    <article className="npc-asset-card">
-    <div className="npc-asset-preview"><div className="npc-preview-label">3D CHARACTER PREVIEW</div><div className="npc-preview-stage" ref={host}/><span className="npc-preview-hint">Rotating model · stylised 3D</span></div>
-    <div className="npc-asset-info"><div className="npc-asset-title"><div><h3>Ayo · Market Guide</h3><p>Friendly neighbourhood vendor</p></div><span className="npc-asset-tag">STARTER</span></div>
-     <div className="npc-asset-tags"><span>Human</span><span>Everyday</span><span>Dialogue-ready concept</span></div>
-     <p className="npc-asset-description">A welcoming street-market character concept for shops, neighbourhood scenes and exploration games.</p>
-     <div className="npc-asset-meta"><span>STYLE <b>Stylised low-poly</b></span><span>RIG <b>Preview model only</b></span></div>
+    <div className="npc-asset-preview"><div className="npc-preview-label">INTERACTIVE 3D VIEWPORT</div><div className="npc-preview-stage" ref={host}/><span className="npc-preview-hint">{status} · Drag to rotate · Pinch/scroll to zoom</span></div>
+    <div className="npc-asset-info"><div className="npc-asset-title"><div><h3>Amara · City Administrator</h3><p>Human NPC · public services and city scenes</p></div><span className="npc-asset-tag">LIBRARY SAMPLE</span></div>
+     <div className="npc-asset-tags"><span>Real human mesh</span><span>Rigged skeleton</span><span>Animated</span><span>High detail</span></div>
+     <p className="npc-asset-description">A real 3D human character generated from the Ara character system, with a full rig, facial features and animation support. This is an interactive model preview, not a flat picture or primitive-shape mannequin.</p>
+     <div className="npc-asset-meta"><span>MODEL <b>Ara 3D · CC0 character data</b></span><span>PREVIEW <b>Live 3D</b></span></div>
+     <a className="npc-open-builder" href="https://ara3dgen.com/app/" target="_blank" rel="noreferrer">Customise this character in the 3D builder ↗</a>
     </div>
    </article>
-   <div className="npc-library-note"><div className="npc-note-icon">✦</div><b>Built to grow beyond 1,000 NPCs</b><p>This is the first visual library sample, not a completed 1,000-character catalogue. The full library will be organised by role, appearance, culture, outfit, animation and art style.</p><div className="npc-note-stats"><span><b>1</b> preview asset</span><span><b>1,000+</b> library target</span></div></div>
+   <div className="npc-library-note"><div className="npc-note-icon">✦</div><b>1,000+ NPC library target</b><p>This is one real rigged 3D character preview. The larger library will grow through reusable presets, custom character variations, outfits, roles and animation sets. We will not label the catalogue as 1,000 assets until those assets actually exist.</p><div className="npc-note-stats"><span><b>1</b> live 3D sample</span><span><b>1,000+</b> target catalogue</span></div>
+   </div>
   </div>
  </section>;
 }
