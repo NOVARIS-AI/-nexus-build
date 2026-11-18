@@ -3,6 +3,7 @@ import ProjectManager from "./components/ProjectManager";
 import SceneEditor from "./components/SceneEditor";
 import ToolchainStudio from "./components/ToolchainStudio";
 import GameplayStudio from "./components/GameplayStudio";
+import NPCLibrary from "./components/NPCLibrary";
 import type { Project } from "./api";
 
 const starterPrompts = ["Build a lively Lagos street with danfo buses and market stalls","Create a fantasy island with a village, forest and hidden temple","Make a neon racing game with checkpoints and drifting"];
@@ -26,6 +27,7 @@ export default function App(){
         </section>
         <div className="section-row"><div><h2>World editor</h2><p>Select objects and shape your scene in real time</p></div><span className="version">SCENE EDITOR · PROTOTYPE</span></div>
         <SceneEditor project={currentProject} onProjectUpdated={setCurrentProject}/>
+        <NPCLibrary/>
         <GameplayStudio project={currentProject} onProjectUpdated={setCurrentProject}/>
         <ToolchainStudio/>
         <div className="roadmap"><div><span className="road-icon">01</span><div><b>Prompt → Game plan</b><small>Prompt capture foundation</small></div><span className="state done">FOUNDATION</span></div><div><span className="road-icon">02</span><div><b>World & asset pipeline</b><small>Interactive procedural scene editor</small></div><span className="state">IN PROGRESS</span></div><div><span className="road-icon">03</span><div><b>Playable game runtime</b><small>Godot integration planned</small></div><span className="state">PLANNED</span></div></div>
