@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import HumanForgeStudio from "./HumanForgeStudio";
+import NPCProductionHub from "./NPCProductionHub";
 
 type CharacterSettings = {
   preset: string;
@@ -271,5 +272,6 @@ export default function NPCLibrary() {
       <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>
     </div>
     {studio === "humanforge" ? <HumanForgeStudio /> : <AraCharacterStudio />}
+    <NPCProductionHub />
   </section>;
 }
