@@ -55,3 +55,15 @@
 @media(max-width:520px){.scene-viewport .world{min-height:290px}.scene-toolbar button{flex:1}.object-list{grid-template-columns:1fr 1fr}.scene-inspector{padding:12px}}
 
 .scene-toolbar button:disabled{opacity:.4;cursor:not-allowed}.scene-save-message{display:block;margin-top:6px;color:#a9cbaa;line-height:1.5}.editor-footnote{overflow-wrap:anywhere}
+
+.tool-drawer{max-height:360px;overflow:auto;padding:13px;background:#17161d;border-top:1px solid #39343d;border-bottom:1px solid #39343d}
+.tool-drawer section+section{margin-top:13px}
+.tool-drawer h4{margin:0 0 8px;color:#d8ad80;font:10px 'DM Mono';letter-spacing:1px;text-transform:uppercase}
+.tool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tool-grid button,.inspector-actions button{min-width:0;padding:8px 7px;border:1px solid #3a3540;border-radius:6px;background:#242128;color:#c8c0cb;font-size:9px;text-align:left}
+.tool-grid button:hover,.inspector-actions button:hover{border-color:#bd936b;color:#f1c18e}
+.tool-grid button:disabled{opacity:.32;cursor:not-allowed}
+.inspector-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+.inspector-actions .delete-object{grid-column:1/-1;margin-top:0;text-align:center}
+.history-state{display:block;margin-top:5px;color:#b99b7e;font:8px 'DM Mono'}
+@media(max-width:520px){.tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tool-drawer{max-height:300px;padding:10px}.scene-toolbar button{font-size:8px;padding:7px 6px}}
