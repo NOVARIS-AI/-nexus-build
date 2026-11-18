@@ -16,13 +16,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "baseUrl": ".",
     "paths": {
       "humanforge/web": [
-        "src/types/humanforge-web.d.ts"
+        "./src/types/humanforge-web.d.ts"
       ],
       "humanforge/human": [
-        "src/types/humanforge-human.d.ts"
+        "./src/types/humanforge-human.d.ts"
       ]
     }
   },
