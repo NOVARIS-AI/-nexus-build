@@ -193,3 +193,35 @@
 .gameplay-message{font-size:9px;color:#b5c9b7;margin-top:9px}
 @media(max-width:760px){.playtest-layout{grid-template-columns:1fr}.playtest-canvas{height:330px}.gameplay-head{flex-direction:column}}
 @media(max-width:440px){.gameplay-studio{padding:12px}.playtest-canvas{height:285px}.playtest-overlay{flex-direction:column;align-items:flex-start}.playtest-actions button{font-size:8px;padding:7px}.touch-pad{gap:5px}}
+
+
+/* NPC asset library */
+.npc-library{margin-top:28px;padding:18px;border:1px solid #3a343e;border-radius:13px;background:linear-gradient(145deg,#1e1b22,#17161c)}
+.npc-library-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:15px}
+.npc-library-head h2{font:600 19px 'Space Grotesk';margin:5px 0}
+.npc-library-head p{max-width:600px;font-size:10px;color:#8e8993;margin:0;line-height:1.6}
+.npc-library-count{font:8px 'DM Mono';color:#c6a17d;letter-spacing:.7px;white-space:nowrap}
+.npc-library-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(210px,.65fr);gap:12px}
+.npc-asset-card{min-width:0;overflow:hidden;border:1px solid #39343d;border-radius:10px;background:#201e25}
+.npc-asset-preview{height:260px;position:relative;background:radial-gradient(ellipse at 50% 45%,#3b3b48,#202129 72%)}
+.npc-preview-stage{position:absolute;inset:0}
+.npc-preview-stage canvas{display:block;width:100%;height:100%}
+.npc-preview-label,.npc-preview-hint{position:absolute;z-index:1;left:11px;padding:6px 8px;border:1px solid #ffffff20;border-radius:5px;background:#11131ac9;color:#c5bdc8;font:8px 'DM Mono';letter-spacing:.6px;pointer-events:none}
+.npc-preview-label{top:10px}.npc-preview-hint{bottom:10px;color:#a49ba7}
+.npc-asset-info{padding:14px}
+.npc-asset-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.npc-asset-title h3{margin:0;font:600 14px 'Space Grotesk';color:#f0e8ef}
+.npc-asset-title p{margin:4px 0 0;color:#938c98;font-size:10px}
+.npc-asset-tag{font:8px 'DM Mono';color:#e0b27f;border:1px solid #604a36;padding:5px 7px;border-radius:5px}
+.npc-asset-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.npc-asset-tags span{padding:5px 7px;border-radius:5px;background:#302a32;color:#b7aeb9;font-size:8px}
+.npc-asset-description{font-size:10px;line-height:1.6;color:#9b949f;margin:12px 0}
+.npc-asset-meta{display:flex;gap:18px;border-top:1px solid #39343d;padding-top:10px}
+.npc-asset-meta span{font:8px 'DM Mono';color:#827b87}.npc-asset-meta b{display:block;margin-top:4px;color:#c9bdca;font:9px 'DM Sans'}
+.npc-library-note{align-self:stretch;padding:17px;border:1px solid #39343d;border-radius:10px;background:#201e25;display:flex;flex-direction:column;justify-content:center}
+.npc-note-icon{width:32px;height:32px;border-radius:9px;background:#42332a;color:#e6b47e;display:grid;place-items:center;margin-bottom:13px}
+.npc-library-note>b{font:600 13px 'Space Grotesk';color:#e9e0e9}
+.npc-library-note>p{font-size:10px;line-height:1.7;color:#928b97}
+.npc-note-stats{display:flex;gap:15px;margin-top:10px;padding-top:12px;border-top:1px solid #39343d}
+.npc-note-stats span{font-size:8px;color:#8f8792}.npc-note-stats b{display:block;font:600 17px 'Space Grotesk';color:#e2b27d;margin-bottom:3px}
+@media(max-width:700px){.npc-library-grid{grid-template-columns:1fr}.npc-library-head{align-items:flex-start;flex-direction:column}.npc-asset-preview{height:230px}}
