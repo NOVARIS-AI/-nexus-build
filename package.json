@@ -15,7 +15,8 @@
     "react": "latest",
     "react-dom": "latest",
     "three": "latest",
-    "humanforge": "0.8.1"
+    "humanforge": "0.8.1",
+    "@mediapipe/tasks-vision": "1.2.3"
   },
   "devDependencies": {
     "@types/react": "latest",
