@@ -273,3 +273,36 @@
 .npc-library-note-wide>p{margin:5px 0 0}
 @media(max-width:850px){.npc-studio-layout{grid-template-columns:1fr}.npc-tools-strip{grid-template-columns:1fr 1fr}.npc-tools-strip>div{grid-column:1/-1}}
 @media(max-width:480px){.npc-editor-panel{padding:12px}.npc-tools-strip{grid-template-columns:1fr}.npc-tools-strip>div{grid-column:auto}.npc-colour-row{gap:4px}.npc-colour-row label{font-size:7px}}
+
+
+/* Native in-app HumanForge character editor */
+.npc-library-shell{margin-top:26px;min-width:0}
+.npc-studio-switch{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:6px;border:1px solid #39343d;border-radius:9px;background:#1b1920}
+.npc-studio-switch button{flex:1;min-width:145px;border:1px solid transparent;border-radius:6px;padding:10px 12px;background:transparent;color:#a9a0ac;font:600 10px 'DM Sans';cursor:pointer}
+.npc-studio-switch button.active{background:#3a302b;border-color:#765a42;color:#f0c18e}
+.nexus-humanforge{min-width:0;padding:16px;border:1px solid #39343d;border-radius:12px;background:linear-gradient(145deg,#211e25,#17161c);color:#eee}
+.nexus-humanforge-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
+.nexus-humanforge-heading h3{margin:5px 0;font:600 16px 'Space Grotesk';color:#f1e9f1}
+.nexus-humanforge-heading p{margin:0;max-width:620px;color:#9b929e;font-size:10px;line-height:1.6}
+.nexus-humanforge-editor{min-width:0;overflow:hidden;border:1px solid #45404a;border-radius:10px;background:#222027}
+.nexus-humanforge .hf-root{width:100%;max-width:100%;min-height:620px}
+.nexus-humanforge .hf-editor{border-radius:9px;background:#211f26;color:#eee;border:0}
+.nexus-humanforge .hf-panel{background:#211f26;border-left-color:#403943}
+.nexus-humanforge .hf-tabs{border-bottom-color:#403943;background:#211f26}
+.nexus-humanforge .hf-tabs button{background:#302b34;color:#c9bfca}
+.nexus-humanforge .hf-tabs button.on{background:#b58c67;color:#1d1712}
+.nexus-humanforge .hf-controls{background:#211f26}
+.nexus-humanforge .hf-label,.nexus-humanforge .hf-block>.hf-label{color:#d2c8d3}
+.nexus-humanforge .hf-tile{background:#302b34;border-color:#4a424e;color:#eee}
+.nexus-humanforge .hf-tile.on{background:#39302a;border-color:#d1a477}
+.nexus-humanforge .hf-swatch{box-shadow:0 0 0 1px #665a69}
+.nexus-humanforge .hf-swatch.on{box-shadow:0 0 0 2px #d1a477}
+.nexus-humanforge .hf-seg,.nexus-humanforge .hf-btn{background:#28242c;color:#eee}
+.nexus-humanforge .hf-seg button.on{background:#b58c67;color:#1d1712}
+.nexus-humanforge .hf-save{background:#b58c67;color:#211811}
+.nexus-humanforge-footer{display:grid;gap:5px;margin-top:10px;color:#c9b08f;font-size:9px;line-height:1.5}
+.nexus-humanforge-note{margin:9px 0 0;color:#89818d;font-size:8px;line-height:1.6}
+.nexus-humanforge-state{min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;border:1px dashed #514653;border-radius:10px;background:#201e25;color:#e9e0e9}
+.nexus-humanforge-state>b{font:600 13px 'Space Grotesk'}
+.nexus-humanforge-state>p,.nexus-humanforge-state>small{max-width:420px;margin:0;color:#a39aa7;font-size:9px;line-height:1.6}
+@media(max-width:700px){.nexus-humanforge{padding:11px}.nexus-humanforge-heading{flex-direction:column}.nexus-humanforge .hf-root{min-height:720px}.nexus-humanforge .hf-editor{grid-template-rows:minmax(260px,42%) minmax(0,1fr)}}
