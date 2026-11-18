@@ -17,6 +17,11 @@ function readSavedConfig(): SavedCharacter | undefined {
 }
 
 export default function HumanForgeStudio() {
+  const [attempt, setAttempt] = useState(0);
+  return <HumanForgeLoader key={attempt} onRetry={() => setAttempt((value) => value + 1)} />;
+}
+
+function HumanForgeLoader({ onRetry }: { onRetry: () => void }) {
   const { pkg, error } = useHumanPackage(HUMAN_ASSETS, { textureFormat: "webp" });
   const [saved, setSaved] = useState(() => !!readSavedConfig());
   const [message, setMessage] = useState("Your edits stay in the editor until you save them.");
@@ -35,7 +40,8 @@ export default function HumanForgeStudio() {
     return <div className="nexus-humanforge-state">
       <b>Character creator could not load</b>
       <p>{error.message}</p>
-      <small>Check your internet connection, then switch to Ara Studio or refresh this page.</small>
+      <small>Check your internet connection. The creator assets are hosted separately from the app.</small>
+      <button type="button" className="nexus-humanforge-retry" onClick={onRetry}>Try loading again</button>
     </div>;
   }
 
