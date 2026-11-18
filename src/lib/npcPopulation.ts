@@ -37,8 +37,8 @@ function seeded(seed: number) {
 export function generateNpcPopulation(count = 1200, seed = 20261118): PopulationNpc[] {
   const random = seeded(seed);
   return Array.from({ length: Math.max(0, Math.min(5000, Math.floor(count))) }, (_, index) => {
-    const first = firstNames[Math.floor(random() * firstNames.length)];
-    const last = surnames[Math.floor(random() * surnames.length)];
+    const first = firstNames[index % firstNames.length];
+    const last = surnames[Math.floor(index / firstNames.length) % surnames.length];
     const role = roles[Math.floor(random() * roles.length)];
     const personality = personalities[Math.floor(random() * personalities.length)];
     const routine = routines[Math.floor(random() * routines.length)];
@@ -46,7 +46,7 @@ export function generateNpcPopulation(count = 1200, seed = 20261118): Population
     const z = (random() * 40) - 20;
     return {
       id: "population-" + seed + "-" + String(index + 1).padStart(4, "0"),
-      name: first + " " + last + " " + String(index + 1).padStart(3, "0"),
+      name: first + " " + last,
       role,
       dialogue: dialogues[Math.floor(random() * dialogues.length)],
       position: [x, 0, z],
