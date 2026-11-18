@@ -17,35 +17,35 @@ export default {
       return json({ ok: true, service: "nexus-build-api", database: "bound", timestamp: now() });
     }
     if (url.pathname === "/api/projects" && request.method === "GET") {
-      const result = await env.DB.prepare("SELECT id, name, description, prompt, status, created_at, updated_at FROM projects ORDER BY updated_at DESC").all();
+      const result = await env.DB.prepare("SELECT id, name, description, prompt, status, scene_json, created_at, updated_at FROM projects ORDER BY updated_at DESC").all();
       return json({ projects: result.results ?? [] });
     }
     if (url.pathname === "/api/projects" && request.method === "POST") {
-      let body: { name?: string; description?: string; prompt?: string };
+      let body: { name?: string; description?: string; prompt?: string; scene_json?: string };
       try { body = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400); }
       const name = body.name?.trim();
       if (!name) return json({ error: "Project name is required." }, 400);
       const id = crypto.randomUUID();
       const timestamp = now();
-      await env.DB.prepare("INSERT INTO projects (id, name, description, prompt, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'draft', ?, ?)")
-        .bind(id, name, body.description?.trim() ?? "", body.prompt?.trim() ?? "", timestamp, timestamp).run();
-      return json({ project: { id, name, description: body.description?.trim() ?? "", prompt: body.prompt?.trim() ?? "", status: "draft", created_at: timestamp, updated_at: timestamp } }, 201);
+      await env.DB.prepare("INSERT INTO projects (id, name, description, prompt, status, scene_json, created_at, updated_at) VALUES (?, ?, ?, ?, 'draft', ?, ?, ?)")
+        .bind(id, name, body.description?.trim() ?? "", body.prompt?.trim() ?? "", body.scene_json ?? "{}", timestamp, timestamp).run();
+      return json({ project: { id, name, description: body.description?.trim() ?? "", prompt: body.prompt?.trim() ?? "", status: "draft", scene_json: body.scene_json ?? "{}", created_at: timestamp, updated_at: timestamp } }, 201);
     }
     const match = url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)$/i);
     if (match && request.method === "GET") {
-      const project = await env.DB.prepare("SELECT id, name, description, prompt, status, created_at, updated_at FROM projects WHERE id = ?").bind(match[1]).first();
+      const project = await env.DB.prepare("SELECT id, name, description, prompt, status, scene_json, created_at, updated_at FROM projects WHERE id = ?").bind(match[1]).first();
       return project ? json({ project }) : json({ error: "Project not found." }, 404);
     }
     if (match && request.method === "PATCH") {
-      let body: { name?: string; description?: string; prompt?: string; status?: string };
+      let body: { name?: string; description?: string; prompt?: string; status?: string; scene_json?: string };
       try { body = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400); }
       const existing = await env.DB.prepare("SELECT id FROM projects WHERE id = ?").bind(match[1]).first();
       if (!existing) return json({ error: "Project not found." }, 404);
       const allowed = ["draft", "planning", "prototype", "archived"];
       if (body.status && !allowed.includes(body.status)) return json({ error: "Invalid project status." }, 400);
-      await env.DB.prepare("UPDATE projects SET name = COALESCE(?, name), description = COALESCE(?, description), prompt = COALESCE(?, prompt), status = COALESCE(?, status), updated_at = ? WHERE id = ?")
-        .bind(body.name?.trim() || null, body.description ?? null, body.prompt ?? null, body.status ?? null, now(), match[1]).run();
-      const project = await env.DB.prepare("SELECT id, name, description, prompt, status, created_at, updated_at FROM projects WHERE id = ?").bind(match[1]).first();
+      await env.DB.prepare("UPDATE projects SET name = COALESCE(?, name), description = COALESCE(?, description), prompt = COALESCE(?, prompt), status = COALESCE(?, status), scene_json = COALESCE(?, scene_json), updated_at = ? WHERE id = ?")
+        .bind(body.name?.trim() || null, body.description ?? null, body.prompt ?? null, body.status ?? null, body.scene_json ?? null, now(), match[1]).run();
+      const project = await env.DB.prepare("SELECT id, name, description, prompt, status, scene_json, created_at, updated_at FROM projects WHERE id = ?").bind(match[1]).first();
       return json({ project });
     }
     if (match && request.method === "DELETE") {
