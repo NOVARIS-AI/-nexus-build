@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "db:migrate": "wrangler d1 migrations apply nexus-build-db --remote",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -19,6 +21,7 @@
     "@types/react-dom": "latest",
     "@types/three": "latest",
     "typescript": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "wrangler": "latest"
   }
 }
