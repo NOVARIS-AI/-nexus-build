@@ -1,3 +1,4 @@
+import { createFallbackBlueprint, chooseEngine, chooseProcessingMode, validateBlueprint, type EngineId, type GameBlueprint } from "./lib/nexusCore";
 interface D1Result<T = Record<string, unknown>> { results?: T[]; success: boolean; meta?: { changes?: number }; }
 interface D1Statement { bind(...values: unknown[]): D1Statement; first<T = Record<string, unknown>>(): Promise<T | null>; all<T = Record<string, unknown>>(): Promise<D1Result<T>>; run(): Promise<D1Result>; }
 interface D1Database { prepare(query: string): D1Statement; batch(statements: D1Statement[]): Promise<D1Result[]>; }
@@ -123,6 +124,59 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const total=count?.total??0,loaded=rows.results?.length??0;
    return json({npcs:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1",searchMode:describe?"description-match":ftsQuery?"fts5":"catalogue"});
   }catch(error){return json({error:error instanceof Error?error.message:"NPC catalogue unavailable."},503);}
+ }
+ if(url.pathname==="/api/director/plan"&&request.method==="POST"){
+  let body:{prompt?:string;engine?:EngineId};
+  try{body=await request.json();}catch{return json({error:"Send a valid game description."},400);}
+  const prompt=(body.prompt??"").trim().slice(0,2400),requested=(body.engine??"auto") as EngineId;
+  if(prompt.length<12)return json({error:"Please describe the game in at least 12 characters."},400);
+  if(!["auto","three","godot"].includes(requested))return json({error:"Choose a registered engine option."},400);
+  let blueprint:GameBlueprint|null=null,source="local-fallback";
+  try{
+   const instruction="Create a practical game design blueprint. Return ONLY JSON with keys: title, genre, camera, targetPlatform, summary, player {role,goal,abilities}, world {setting,environment,regions}, coreLoop (3-6 strings), mechanics (3-8 strings), progression (3-6 strings), assetNeeds (3-8 strings). Do not claim to generate finished 3D assets or a complete playable game. Keep content suitable for a general audience. Use concise, actionable entries.";
+   const generated=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:instruction},{role:"user",content:"Game idea: "+prompt}],max_tokens:950,temperature:.35});
+   const raw=(generated.response??"").trim(),start=raw.indexOf("{"),end=raw.lastIndexOf("}");
+   if(start>=0&&end>start){
+    const parsed=JSON.parse(raw.slice(start,end+1)) as Record<string,unknown>;
+    const list=(v:unknown,fallback:string[])=>Array.isArray(v)?v.filter(x=>typeof x==="string").map(x=>(x as string).slice(0,180)).slice(0,10):fallback;
+    const player=parsed.player&&typeof parsed.player==="object"?parsed.player as Record<string,unknown>:{};
+    const world=parsed.world&&typeof parsed.world==="object"?parsed.world as Record<string,unknown>:{};
+    const fallback=createFallbackBlueprint(prompt,requested,true);
+    blueprint={...fallback,title:typeof parsed.title==="string"?parsed.title.slice(0,80):fallback.title,genre:typeof parsed.genre==="string"?parsed.genre.slice(0,60):fallback.genre,camera:typeof parsed.camera==="string"?parsed.camera.slice(0,80):fallback.camera,targetPlatform:typeof parsed.targetPlatform==="string"?parsed.targetPlatform.slice(0,100):fallback.targetPlatform,summary:typeof parsed.summary==="string"?parsed.summary.slice(0,600):fallback.summary,player:{role:typeof player.role==="string"?player.role.slice(0,120):fallback.player.role,goal:typeof player.goal==="string"?player.goal.slice(0,240):fallback.player.goal,abilities:list(player.abilities,fallback.player.abilities)},world:{setting:typeof world.setting==="string"?world.setting.slice(0,300):fallback.world.setting,environment:list(world.environment,fallback.world.environment),regions:list(world.regions,fallback.world.regions)},coreLoop:list(parsed.coreLoop,fallback.coreLoop),mechanics:list(parsed.mechanics,fallback.mechanics),progression:list(parsed.progression,fallback.progression),assetNeeds:list(parsed.assetNeeds,fallback.assetNeeds),engine:chooseEngine(requested),processing:chooseProcessingMode(prompt,true),createdAt:now()};
+    if(!validateBlueprint(blueprint).length)source="workers-ai";else blueprint=null;
+   }
+  }catch{}
+  if(!blueprint)blueprint=createFallbackBlueprint(prompt,requested,Boolean(env.AI));
+  return json({blueprint,source,aiAvailable:Boolean(env.AI),validated:validateBlueprint(blueprint).length===0});
+ }
+ if(url.pathname==="/api/tasks"&&request.method==="GET"){
+  const limit=Math.min(50,Math.max(1,Number(url.searchParams.get("limit"))||20));
+  const rows=await env.DB.prepare("SELECT id,type,status,input,engine,result_json,error,created_at,updated_at FROM generation_tasks ORDER BY created_at DESC LIMIT ?").bind(limit).all();
+  return json({tasks:(rows.results??[]).map((row:any)=>({...row,result:row.result_json?JSON.parse(String(row.result_json)):null,createdAt:row.created_at,updatedAt:row.updated_at}))});
+ }
+ if(url.pathname==="/api/tasks"&&request.method==="POST"){
+  let body:{type?:string;input?:string;engine?:string};
+  try{body=await request.json();}catch{return json({error:"Send a valid task object."},400);}
+  const type=(body.type??"").trim(),input=(body.input??"").trim(),engine=body.engine??"auto";
+  if(!type||type.length>80||input.length<1||input.length>4000||!["auto","three","godot"].includes(engine))return json({error:"Task type, input or engine is invalid."},400);
+  const id=crypto.randomUUID(),stamp=now();
+  try{await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?, 'queued',?,?,?,?)").bind(id,type,input,engine,stamp,stamp).run();return json({task:{id,type,status:"queued",input,engine,createdAt:stamp,updatedAt:stamp}},201);}
+  catch{return json({error:"Could not store generation task. Apply migration 0005 and retry."},503);}
+ }
+ const taskMatch=url.pathname.match(/^\/api\/tasks\/([a-f0-9-]+)$/i);
+ if(taskMatch&&request.method==="PATCH"){
+  let body:{status?:string;result?:unknown;error?:string};
+  try{body=await request.json();}catch{return json({error:"Send a valid task update."},400);}
+  if(!body||!["queued","running","completed","failed"].includes(body.status??""))return json({error:"Invalid task status."},400);
+  const resultJson=body.result===undefined?null:JSON.stringify(body.result);
+  if(resultJson&&resultJson.length>180000)return json({error:"Task result is too large to store."},413);
+  const stamp=now();
+  try{
+   const updated=await env.DB.prepare("UPDATE generation_tasks SET status=?,result_json=COALESCE(?,result_json),error=?,updated_at=? WHERE id=?").bind(body.status,resultJson,body.error?.slice(0,1000)??null,stamp,taskMatch[1]).run();
+   if(!updated.meta?.changes)return json({error:"Generation task not found."},404);
+   const row=await env.DB.prepare("SELECT id,type,status,input,engine,result_json,error,created_at,updated_at FROM generation_tasks WHERE id=?").bind(taskMatch[1]).first<Record<string,unknown>>();
+   return json({task:row?{...row,result:row.result_json?JSON.parse(String(row.result_json)):null,createdAt:row.created_at,updatedAt:row.updated_at}:null});
+  }catch{return json({error:"Could not update generation task."},503);}
  }
  if(url.pathname==="/api/projects"&&request.method==="GET"){
   try{
