@@ -16,14 +16,15 @@ function readSavedConfig(): SavedCharacter | undefined {
   }
 }
 
-export default function HumanForgeStudio() {
+export default function HumanForgeStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null }) {
   const [attempt, setAttempt] = useState(0);
-  return <HumanForgeLoader key={attempt} onRetry={() => setAttempt((value) => value + 1)} />;
+  return <HumanForgeLoader key={`${attempt}-${selectedNpc?.id ?? "default"}`} selectedNpc={selectedNpc} onRetry={() => setAttempt((value) => value + 1)} />;
 }
 
-function HumanForgeLoader({ onRetry }: { onRetry: () => void }) {
+function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null }) {
   const { pkg, error } = useHumanPackage(HUMAN_ASSETS, { textureFormat: "webp" });
   const [saved, setSaved] = useState(() => !!readSavedConfig());
+  const [characterName, setCharacterName] = useState(selectedNpc?.name ?? "Amara");
   const [message, setMessage] = useState("Your edits stay in the editor until you save them.");
 
   const saveCharacter = (config: HumanConfig, _snapshot: string | null) => {
@@ -61,11 +62,12 @@ function HumanForgeLoader({ onRetry }: { onRetry: () => void }) {
     <div className="nexus-humanforge-heading">
       <div>
         <span className="eyebrow">IN-APP HUMAN CREATOR</span>
-        <h3>Realistic Character Workshop</h3>
+        <h3>{selectedNpc ? `Customising ${selectedNpc.name}` : "Realistic Character Workshop"}</h3>
         <p>Skin tone, eye colour, face details, hair, clothing and accessories — edited directly beside the 3D preview.</p>
       </div>
       <span className="npc-live-pill">HUMANFORGE · CC0 ASSETS</span>
     </div>
+    {selectedNpc && <div className="nexus-selected-npc"><div><span className="eyebrow">SELECTED LIBRARY NPC</span><b>{selectedNpc.role}</b><small>{selectedNpc.personality ?? "Resident"} · {selectedNpc.routine ?? "daily routine"}</small></div><label>Custom NPC name<input value={characterName} onChange={event => setCharacterName(event.target.value)} maxLength={48} placeholder="Enter a character name"/></label></div>}
     <div className="nexus-humanforge-editor">
       <HumanEditor
         pkg={pkg}
@@ -90,7 +92,7 @@ function HumanForgeLoader({ onRetry }: { onRetry: () => void }) {
     </div>
     <div className="nexus-humanforge-footer">
       <span>{saved ? "A saved character configuration exists on this device." : "No saved character configuration yet."}</span>
-      <span>{message}</span>
+      <span>{message}</span>{selectedNpc && <span>Current custom name: <b>{characterName.trim() || selectedNpc.name}</b>. This is the NPC display name; the 3D model settings are edited below.</span>}
     </div>
     <p className="nexus-humanforge-note">The 3D creator and its CC0 character assets are loaded from the HumanForge public CDN. The saved settings currently stay in this browser on this device; project-wide NPC asset saving and GLB export are separate next steps.</p>
   </div>;
