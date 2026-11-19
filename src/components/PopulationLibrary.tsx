@@ -20,7 +20,6 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("All");
   const [visibleCount, setVisibleCount] = useState(24);
-  const gridRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const population = useMemo(() => generateNpcPopulation(1200), []);
   const counts = useMemo(() => categories.reduce((result, item) => {
@@ -38,12 +37,11 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
   const visibleNpcs = filtered.slice(0, visibleCount);
   useEffect(() => { setVisibleCount(24); }, [query, category]);
   useEffect(() => {
-    const root = gridRef.current;
     const sentinel = loadMoreRef.current;
-    if (!root || !sentinel || visibleCount >= filtered.length) return;
+    if (!sentinel || visibleCount >= filtered.length) return;
     const observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) setVisibleCount(current => Math.min(current + 24, filtered.length));
-    }, { root, rootMargin: "280px 0px" });
+    }, { rootMargin: "280px 0px" });
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [visibleCount, filtered.length]);
@@ -60,7 +58,7 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
       {categories.map(item => <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}<span>{counts[item]}</span></button>)}
     </div>
     <div className="population-index-heading"><div><b>{category === "All" ? "All residents" : category}</b><small>Sorted by generated index · Real Ara 3D character previews · Select to customise</small></div><span>SHOWING {visibleNpcs.length.toLocaleString()} / {filtered.length.toLocaleString()}</span></div>
-    {filtered.length ? <div className="population-card-grid" ref={gridRef}>
+    {filtered.length ? <div className="population-card-grid">
       {visibleNpcs.map((npc, index) => <article className="population-card" key={npc.id}>
         <div className="population-preview-box" style={{"--avatar-hue": (index * 47 + 24) % 360} as React.CSSProperties}>
           <div className="population-preview-glow" />
