@@ -66,7 +66,7 @@ export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }
 
   return <section className="project-manager">
     <div className="project-manager-head">
-      <div><b>My projects</b><small>Saved securely in your Nexus Build database</small></div>
+      <div><b>My projects</b><small>Saved in your Nexus Build database</small></div>
       <span className={connected ? "db-state connected" : "db-state"}><i />{connected ? "DATABASE CONNECTED" : "DATABASE OFFLINE"}</span>
     </div>
     <div className="project-save-row">
