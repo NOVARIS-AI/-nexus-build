@@ -298,7 +298,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  }
  if(url.pathname==="/api/projects"&&request.method==="GET"){
   try{
-   const result=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects ORDER BY updated_at DESC").all();
+   const result=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE owner_id=? ORDER BY updated_at DESC").bind(projectOwner).all();
    return json({projects:result.results??[]});
   }catch{return json({error:"Could not load projects right now. Please try again."},503);}
  }
