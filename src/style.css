@@ -601,3 +601,11 @@
 .ai-asset-cached{font-size:.78rem;color:#9de1dc}
 .ai-asset-studio .tool-status{margin:0;line-height:1.5}
 @media(max-width:560px){.ai-asset-preview{grid-template-columns:1fr}.ai-asset-preview img{max-height:260px}.ai-asset-heading{flex-direction:column}.ai-asset-model{white-space:normal}}
+
+/* NEXUS Stage 3 · AI-guided procedural 3D assets */
+.procedural-3d-studio{display:grid;gap:12px;margin:18px 0;padding:17px;border:1px solid rgba(199,159,119,.28);border-radius:15px;background:linear-gradient(145deg,rgba(48,36,30,.42),rgba(17,23,30,.88))}
+.procedural-3d-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.procedural-3d-head>div{display:grid;gap:5px}.procedural-3d-head b{font-size:1.02rem}.procedural-3d-head small{font-size:.8rem;color:var(--muted,#aab6c2);line-height:1.5}.procedural-3d-head>span{white-space:nowrap;border:1px solid rgba(208,166,123,.3);border-radius:99px;padding:6px 9px;color:#dfbd98;font-size:.64rem;letter-spacing:.06em}
+.procedural-3d-studio>textarea{width:100%;resize:vertical;min-height:76px;padding:11px;border:1px solid rgba(155,181,198,.2);border-radius:9px;background:#10151c;color:inherit;font:inherit}
+.procedural-3d-actions{display:flex;gap:8px;flex-wrap:wrap}.procedural-3d-actions button{padding:10px 14px;border:0;border-radius:9px;background:#d4a777;color:#21170f;font-weight:700}.procedural-3d-actions button:disabled{opacity:.55}
+.procedural-3d-preview{display:grid;grid-template-columns:minmax(160px,260px) 1fr;gap:13px;align-items:center}.procedural-3d-preview>div:last-child{min-width:0}.procedural-3d-preview p{font-size:.82rem;line-height:1.5;color:var(--muted,#aab6c2)}.procedural-3d-preview small{color:#dfbd98}.procedural-3d-canvas{width:100%;height:220px;overflow:hidden;border-radius:10px;background:#111820}.procedural-3d-canvas canvas{display:block;width:100%;height:100%}.procedural-3d-empty{height:130px}
+@media(max-width:560px){.procedural-3d-head{flex-direction:column}.procedural-3d-preview{grid-template-columns:1fr}.procedural-3d-canvas{height:230px}.procedural-3d-actions button{flex:1}}
