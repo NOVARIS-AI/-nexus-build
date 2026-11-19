@@ -1,9 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import * as HumanForgeWeb from "humanforge/web";
+import { HumanCanvas, HumanEditor, useHumanPackage } from "humanforge/web";
 import type { HumanConfig } from "humanforge/human";
-const HumanCanvas = (HumanForgeWeb as unknown as { HumanCanvas: React.ComponentType<any> }).HumanCanvas;
-const HumanEditor = HumanForgeWeb.HumanEditor;
-const useHumanPackage = HumanForgeWeb.useHumanPackage;
 import { npcApi } from "../api";
 
 const HUMAN_ASSETS = "https://cdn.jsdelivr.net/gh/abdulrehman043/humanforge@v0.5.0/assets/human";
@@ -192,7 +189,7 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
     </div>
     <section className="nexus-humanforge-export">
       <div><b>Export real 3D model</b><p>Generate a portable GLB containing the character mesh, rig, blendshapes and textures.</p></div>
-      <div className="nexus-humanforge-export-preview"><HumanCanvas pkg={pkg} config={activeConfig} framing="body" background="#d7d2cc" textureSize="1k" onReady={(avatar) => { exportAvatar.current = avatar; }} style={{ height: "300px", width: "100%" }} /></div>
+      <div className="nexus-humanforge-export-preview"><HumanCanvas pkg={pkg} config={activeConfig} framing="body" background="#d7d2cc" textureSize="1k" onReady={(avatar: any) => { exportAvatar.current = avatar; }} style={{ height: "300px", width: "100%" }} /></div>
       <button type="button" className="nexus-humanforge-export-button" onClick={exportCharacter} disabled={exporting}>{exporting ? "Exporting…" : "Export character as .GLB"}</button>
       {exportMessage && <small role="status">{exportMessage}</small>}
     </section>
