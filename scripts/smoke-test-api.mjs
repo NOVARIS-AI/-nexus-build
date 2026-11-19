@@ -16,6 +16,17 @@ if (!projects.response.ok || !Array.isArray(projects.body?.projects)) {
   throw new Error(`Project listing failed (${projects.response.status}): ${JSON.stringify(projects.body)}`);
 }
 
+const missingId = "00000000-0000-4000-8000-000000000000";
+const missingProject = await readJson(`/api/projects/${missingId}`);
+if (missingProject.response.status !== 404 || typeof missingProject.body?.error !== "string") {
+  throw new Error(`Missing project lookup did not return 404 (${missingProject.response.status}): ${JSON.stringify(missingProject.body)}`);
+}
+
+const missingDelete = await readJson(`/api/projects/${missingId}`, { method: "DELETE" });
+if (missingDelete.response.status !== 404 || typeof missingDelete.body?.error !== "string") {
+  throw new Error(`Missing project deletion did not return 404 (${missingDelete.response.status}): ${JSON.stringify(missingDelete.body)}`);
+}
+
 const invalidProject = await readJson("/api/projects", {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -25,4 +36,4 @@ if (invalidProject.response.status !== 400 || typeof invalidProject.body?.error 
   throw new Error(`Invalid project input was not rejected safely (${invalidProject.response.status}): ${JSON.stringify(invalidProject.body)}`);
 }
 
-console.log("API smoke tests passed: health, D1 readiness, project listing and input validation.");
+console.log("API smoke tests passed: health, D1 readiness, project listing, missing-project handling and input validation.");
