@@ -538,3 +538,14 @@
 .human-feature-list label select{flex:1;width:auto}
 
 .page-error{margin:24px 0;padding:28px;border:1px solid #694b42;border-radius:12px;background:#211b1d;text-align:center;color:#eee}.page-error-mark{width:38px;height:38px;margin:0 auto 12px;display:grid;place-items:center;border-radius:50%;background:#54352f;color:#ffd2bd;font-weight:800;font-size:20px}.page-error h2{font:600 20px 'Space Grotesk';margin:8px 0}.page-error p{color:#aaa1a7;font-size:12px}.page-error button,.population-load-more{border:1px solid #b98d65;border-radius:7px;background:#dfaa72;color:#201710;padding:10px 14px;font-weight:700;font-size:11px}.population-db-warning{margin:12px 0;padding:10px 12px;border:1px solid #755d39;border-radius:8px;color:#e3c99c;background:#29241d;font-size:11px}.population-loading{min-height:160px;display:flex;align-items:center;justify-content:center;gap:12px;color:#c8b5a0;font-size:12px}.population-load-more{display:block;margin:18px auto 0;min-width:190px}.population-load-more span{margin-left:8px}
+
+/* Natural-language NPC discovery */
+.population-describe-panel{display:grid;gap:10px;margin:14px 0 18px;padding:16px;border:1px solid rgba(155,132,255,.24);border-radius:18px;background:linear-gradient(135deg,rgba(120,91,220,.10),rgba(35,190,190,.06))}
+.population-describe-copy{display:grid;gap:4px}.population-describe-copy b{font-size:14px}.population-describe-copy small{font-size:12px;line-height:1.5;opacity:.72}
+.population-describe-panel textarea{width:100%;resize:vertical;min-height:64px;padding:12px 14px;border:1px solid var(--border,rgba(255,255,255,.14));border-radius:12px;background:rgba(0,0,0,.16);color:inherit;font:inherit;font-size:13px;outline:none}
+.population-describe-panel textarea:focus{border-color:rgba(155,132,255,.7)}
+.population-describe-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.population-describe-submit,.population-describe-clear{min-height:38px;padding:0 14px;border-radius:10px;font:inherit;font-size:12px;cursor:pointer}
+.population-describe-submit{border:1px solid rgba(155,132,255,.45);background:rgba(132,105,235,.2);color:inherit;font-weight:700}
+.population-describe-submit:disabled{opacity:.4;cursor:not-allowed}
+.population-describe-clear{border:1px solid var(--border,rgba(255,255,255,.14));background:transparent;color:inherit}

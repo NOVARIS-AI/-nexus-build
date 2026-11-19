@@ -36,9 +36,15 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(48,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
    const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim(),category=url.searchParams.get("category")??"All";
    const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
-   // FTS5 token-prefix search: user input is tokenized and quoted before it reaches MATCH.
-   const searchTokens=term.match(/[\\p{L}\\p{N}_]+/gu)??[];
-   const ftsQuery=searchTokens.map(token=>'"'+token.replace(/"/g,'""')+'"*').join(" AND ");
+   // Describe mode expands everyday wording into the catalogue's indexed NPC vocabulary.
+   const describe=url.searchParams.get("mode")==="describe";
+   const rawTokens=term.toLowerCase().match(/[\\p{L}\\p{N}_]+/gu)??[];
+   const stopWords=new Set(["a","an","the","and","or","with","in","at","on","of","for","who","that","is","wearing","working","works","from","very","some","someone","person","npc","character","make","find","show","me","please","want","looking","like","their","his","her","they","has","have","to","be","around","late","early","twenties","thirties","years","old"]);
+   const synonymGroups:Record<string,string[]>={friendly:["warm","cheerful","helpful","outgoing"],kind:["warm","helpful","thoughtful"],quiet:["shy","reserved","calm"],introverted:["shy","reserved"],happy:["cheerful","playful"],lively:["energetic","outgoing"],doctor:["Doctor","clinic","hospital"],medic:["Nurse","Doctor","clinic"],nurse:["Nurse","clinic","healthcare"],hospital:["clinic","Nurse","Doctor"],teacher:["Teacher","school","Education"],professor:["Teacher","school"],student:["Student","school"],driver:["Bus driver","transport"],bus:["Bus driver","transport"],mechanic:["Mechanic","workshop"],builder:["Builder","workshop"],trader:["Market trader","Shopkeeper","market"],seller:["Shopkeeper","Food vendor","market"],chef:["Chef","hospitality"],cook:["Chef","Food vendor"],artist:["Artist","creative"],musician:["Musician","creative"],security:["Security officer","community"],police:["Security officer","community"],farmer:["Farmer","garden"],gardener:["Gardener","garden"],hairdresser:["Hair stylist","Barber"],barber:["Barber","Hair stylist"],calm:["calm","reserved","thoughtful"],energetic:["energetic","outgoing"],shy:["shy","reserved"],playful:["playful","cheerful"],helpful:["helpful","warm"],market:["market","Market trader","Shopkeeper"],school:["school","Teacher","Student"],clinic:["clinic","Nurse","Doctor"],office:["office","Receptionist"],workshop:["workshop","Mechanic","Electrician"]};
+   const meaningful=rawTokens.filter(token=>!stopWords.has(token));
+   const expanded=[...new Set(meaningful.flatMap(token=>synonymGroups[token]??[token]))].slice(0,24);
+   // Standard search requires all terms; description search accepts any indexed clue and ranks matches.
+   const ftsQuery=expanded.map(token=>'"'+token.replace(/"/g,'""')+'"*').join(describe?" OR ":" AND ");
    const selectedRoles=categoryRoles[category];
    const roleClause=selectedRoles?" AND p.role IN ("+selectedRoles.map(()=>"?").join(",")+")":"";
    const roleArgs:(string|number)[]=selectedRoles?[...selectedRoles]:[];
@@ -54,7 +60,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
     rows=await env.DB.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,preview_url,model_url FROM npc_profiles"+where+" ORDER BY id LIMIT ? OFFSET ?").bind(...roleArgs,limit,offset).all();
    }
    const total=count?.total??0,loaded=rows.results?.length??0;
-   return json({npcs:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1",searchMode:ftsQuery?"fts5":"catalogue"});
+   return json({npcs:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1",searchMode:describe?"description-match":ftsQuery?"fts5":"catalogue"});
   }catch(error){return json({error:error instanceof Error?error.message:"NPC catalogue unavailable."},503);}
  }
  if(url.pathname==="/api/projects"&&request.method==="GET"){
