@@ -9,13 +9,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - name: Validate database migration sequence
-        run: npm run check:migrations
+        run: npm run check:migrations\n        env:\n          MIGRATION_BASE_SHA: ${{ github.event.before || github.event.pull_request.base.sha }}
       - run: npm run build
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply nexus-build-db --remote
