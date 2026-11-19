@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { HumanEditor, useHumanPackage } from "humanforge/web";
-import type { HumanConfig } from "humanforge/human";
+import { HumanCanvas, HumanEditor, useHumanPackage } from "humanforge/web";
+import type { HumanAvatar, HumanConfig } from "humanforge/human";
+import { useRef } from "react";
 import { npcApi } from "../api";
 
 const HUMAN_ASSETS = "https://cdn.jsdelivr.net/gh/abdulrehman043/humanforge@v0.5.0/assets/human";
@@ -80,12 +81,17 @@ export default function HumanForgeStudio({ selectedNpc }: { selectedNpc?: Select
 function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selectedNpc?: SelectedNpc }) {
   const { pkg, error } = useHumanPackage(HUMAN_ASSETS, { textureFormat: "webp" });
   const [saved, setSaved] = useState(() => !!readSavedConfig(selectedNpc));
+  const [currentConfig, setCurrentConfig] = useState<HumanConfig | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState("");
+  const exportAvatar = useRef<HumanAvatar | null>(null);
   const [characterName, setCharacterName] = useState(selectedNpc?.name ?? "Amara");
   const [message, setMessage] = useState("Your edits stay in this character's editor until you save them.");
   const inferredConfig = useMemo(() => inferHumanConfig(selectedNpc), [selectedNpc?.id, selectedNpc?.appearance?.description]);
   const stored = readSavedConfig(selectedNpc);
   const storedConfig = stored && "config" in stored ? stored.config : stored;
   const initialConfig = storedConfig ?? selectedNpc?.appearance?.humanConfig ?? inferredConfig;
+  const activeConfig = currentConfig ?? (initialConfig as HumanConfig);
 
   const saveCharacter = async (config: HumanConfig, _snapshot: string | null) => {
     try {
@@ -103,6 +109,30 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
     } catch {
       setMessage("This browser could not save the character. Check available device storage and try again.");
     }
+  };
+
+  const exportCharacter = async () => {
+    const avatar = exportAvatar.current;
+    if (!avatar) { setExportMessage("The 3D model is still preparing. Wait a moment and try again."); return; }
+    setExporting(true);
+    setExportMessage("Building your GLB model…");
+    try {
+      const { exportHumanGLB } = await import("humanforge/human/export");
+      const bytes = await exportHumanGLB(avatar);
+      const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+      const blob = new Blob([buffer], { type: "model/gltf-binary" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${(characterName.trim() || selectedNpc?.name || "nexus-character").replace(/[^a-z0-9-_]+/gi, "-")}.glb`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setExportMessage("GLB export created. Check your device downloads.");
+    } catch (exportError) {
+      setExportMessage(exportError instanceof Error ? `GLB export failed: ${exportError.message}` : "GLB export failed. Please try again.");
+    } finally { setExporting(false); }
   };
 
   if (error) {
@@ -149,6 +179,7 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
             garments: ["#202b3a", "#5b263b", "#8b6749", "#d5b98c", "#315b50", "#6c6388", "#e7e0d5"]
           },
         }}
+        onChange={setCurrentConfig}
         onSave={saveCharacter}
         saveLabel={selectedNpc ? "Save this NPC's 3D character" : "Save character on this device"}
         randomize={false}
@@ -157,11 +188,17 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
         style={{ height: "650px", minHeight: "650px" }}
       />
     </div>
+    <section className="nexus-humanforge-export">
+      <div><b>Export real 3D model</b><p>Generate a portable GLB containing the character mesh, rig, blendshapes and textures.</p></div>
+      <div className="nexus-humanforge-export-preview"><HumanCanvas pkg={pkg} config={activeConfig} framing="body" background="#d7d2cc" textureSize="1k" onReady={(avatar) => { exportAvatar.current = avatar; }} style={{ height: "300px", width: "100%" }} /></div>
+      <button type="button" className="nexus-humanforge-export-button" onClick={exportCharacter} disabled={exporting}>{exporting ? "Exporting…" : "Export character as .GLB"}</button>
+      {exportMessage && <small role="status">{exportMessage}</small>}
+    </section>
     <div className="nexus-humanforge-footer">
       <span>{saved ? "A saved HumanForge configuration exists for this character on this device." : "AI starting appearance loaded; save after any edits."}</span>
       <span>{message}</span>
       {selectedNpc && <span>Current display name: <b>{characterName.trim() || selectedNpc.name}</b>.</span>}
     </div>
-    <p className="nexus-humanforge-note">HumanForge generates the actual rigged 3D human mesh from its CC0 assets. AI chooses a starting look from the available engine options; fine details can be edited here. Saved configurations are currently local to this device, not yet exported as GLB or synced to Cloudflare D1.</p>
+    <p className="nexus-humanforge-note">HumanForge generates the actual rigged 3D human mesh from its CC0 assets. AI chooses a starting look from the available engine options; fine details can be edited here. The character configuration syncs to Cloudflare D1; export the generated rigged model as GLB using the exporter above.</p>
   </div>;
 }
