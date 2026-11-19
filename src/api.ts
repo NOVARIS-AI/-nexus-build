@@ -48,6 +48,7 @@ export const assetApi={
   if(type)params.set("type",type);
   return request<{assets:AssetCatalogueRecord[];total:number;limit:number;offset:number;nextOffset:number|null;source:string}>("/api/assets?"+params.toString());
  },
+ generateModel:(prompt:string)=>request<{blueprint:{name:string;description:string;parts:{shape:"box"|"sphere"|"cylinder"|"cone"|"torus";position:[number,number,number];scale:[number,number,number];rotation?:[number,number,number];color:string}[]};taskId:string;source:string}>("/api/assets/generate-3d",{method:"POST",body:JSON.stringify({prompt})}),
  generateImage:(prompt:string,assetType:"Texture"|"Concept art"|"Sprite"="Texture")=>
   request<GeneratedImageAsset>("/api/assets/generate",{method:"POST",body:JSON.stringify({prompt,assetType})}),
  register:(asset:{id:string;name:string;assetType:string;prompt?:string;promptKey?:string;mimeType:string;sizeBytes:number;source:"imported"|"workers-ai";model?:string;license?:string;tags?:string[]})=>
