@@ -1,79 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import {useEffect,useMemo,useState} from "react";
 import AraCharacterCard from "./AraCharacterCard";
-import { generateNpcPopulation, type PopulationNpc } from "../lib/npcPopulation";
-import { npcApi, type NpcProfile } from "../api";
-
-type Category = "All" | "Business" | "Education" | "Healthcare" | "Transport" | "Creative" | "Skilled trades" | "Public services" | "Community";
-const categories: Category[] = ["All", "Business", "Education", "Healthcare", "Transport", "Creative", "Skilled trades", "Public services", "Community"];
-const roleCategory: Record<string, Category> = {
-  Shopkeeper: "Business", "Food vendor": "Business", "Market trader": "Business", Chef: "Business", Receptionist: "Business",
-  Teacher: "Education", Student: "Education", Librarian: "Education", Nurse: "Healthcare", Doctor: "Healthcare",
-  "Bus driver": "Transport", "Delivery rider": "Transport",
-  Artist: "Creative", Musician: "Creative", Photographer: "Creative", "Hair stylist": "Creative", Barber: "Creative", Designer: "Creative", Journalist: "Creative",
-  Mechanic: "Skilled trades", Tailor: "Skilled trades", Engineer: "Skilled trades", Electrician: "Skilled trades", Plumber: "Skilled trades", Builder: "Skilled trades", Farmer: "Skilled trades", Gardener: "Skilled trades",
-  "Security officer": "Public services", Cleaner: "Public services", "Community volunteer": "Community"
-};
-function categoryFor(npc: PopulationNpc): Category { return roleCategory[npc.role] ?? "Community"; }
-function toPopulationNpc(npc: NpcProfile): PopulationNpc {
-  return { id: npc.id, name: npc.name, role: npc.role, dialogue: npc.dialogue, position: [npc.x, 0, npc.z], radius: npc.radius, personality: npc.personality, routine: npc.routine, greeting: npc.greeting, populationGenerated: true };
-}
-export default function PopulationLibrary({ onPreview }: { onPreview: (npc: PopulationNpc) => void }) {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<Category>("All");
-  const [visibleCount, setVisibleCount] = useState(12);
-  const [population, setPopulation] = useState<PopulationNpc[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState<"database" | "fallback">("database");
-  const [loadError, setLoadError] = useState("");
-  useEffect(() => {
-    let active = true;
-    npcApi.list(1200).then(result => {
-      if (!active) return;
-      setPopulation(result.npcs.map(toPopulationNpc));
-      setSource("database");
-      setLoadError("");
-    }).catch(error => {
-      if (!active) return;
-      setPopulation(generateNpcPopulation(1200));
-      setSource("fallback");
-      setLoadError(error instanceof Error ? error.message : "Database unavailable; using the local catalogue.");
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-  const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return population.filter(npc => (category === "All" || categoryFor(npc) === category) &&
-      (!term || [npc.name, npc.role, npc.personality, npc.routine, npc.greeting, npc.id].some(value => value.toLowerCase().includes(term))));
-  }, [population, query, category]);
-  const visibleNpcs = filtered.slice(0, visibleCount);
-  useEffect(() => { setVisibleCount(12); }, [query, category]);
-  return <section className="population-library">
-    <div className="population-library-top">
-      <div><span className="eyebrow">NEXUS CHARACTER DATABASE</span><h2>Resident index</h2><p>NPC profiles are loaded from the permanent catalogue. 3D models are activated only as cards enter view.</p></div>
-      <div className="population-total"><b>{loading ? "…" : population.length.toLocaleString()}</b><span>NPC PROFILES</span></div>
-    </div>
-    <div className="population-search-row">
-      <label className="population-search"><span>⌕</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search NPCs, roles, traits or IDs…" aria-label="Search NPC library"/>{query && <button type="button" onClick={() => setQuery("")} aria-label="Clear search">×</button>}</label>
-      <span className="population-results">{filtered.length.toLocaleString()} MATCHING NPCs</span>
-    </div>
-    <div className="population-category-list" aria-label="Filter NPCs by category">
-      {categories.map(item => <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}<span>{population.filter(npc => item === "All" || categoryFor(npc) === item).length}</span></button>)}
-    </div>
-    <div className="population-index-heading"><div><b>{category === "All" ? "All residents" : category}</b><small>{source === "database" ? "Stored NPC profiles · Ara 3D previews load on demand" : "Local fallback catalogue · database connection unavailable"}</small></div><span>SHOWING {visibleNpcs.length.toLocaleString()} / {filtered.length.toLocaleString()}</span></div>
-    {loadError && <div className="population-db-warning" role="status">Database connection unavailable, so this session is using the local catalogue. {loadError}</div>}
-    {loading && <div className="population-loading" role="status"><span className="npc-loading-orb"/>Loading the NPC catalogue…</div>}
-    {!loading && (filtered.length ? <div className="population-card-grid">
-      {visibleNpcs.map((npc, index) => <article className="population-card" key={npc.id}>
-        <div className="population-preview-box" style={{"--avatar-hue": (index * 47 + 24) % 360} as React.CSSProperties}>
-          <div className="population-preview-glow" />
-          <AraCharacterCard id={npc.id} name={npc.name} index={index} />
-          <span className="population-preview-caption">FULL BODY · {String(index + 1).padStart(4,"0")}</span>
-        </div>
-        <div className="population-card-copy"><b>{npc.name}</b><small>{npc.role}</small><em>{categoryFor(npc)} · {npc.personality}</em></div>
-        <button type="button" className="population-preview-button" onClick={() => onPreview(npc)}>Preview & customise <span>↗</span></button>
-      </article>)}
-    </div> : <div className="population-empty"><b>No NPCs found</b><span>Try another name, role, personality or category.</span><button type="button" onClick={() => { setQuery(""); setCategory("All"); }}>Clear filters</button></div>)}
-    {!loading && visibleCount < filtered.length && <button className="population-load-more" type="button" onClick={() => setVisibleCount(count => Math.min(count + 12, filtered.length))}>Load 12 more residents <span>↓</span></button>}
-    <p className="population-library-foot">The catalogue stores NPC identity, role, personality, routine, dialogue, spawn position and appearance seed in D1. Ara starter models are still fetched from Ara when needed; downloadable model-file storage and pre-rendered portrait assets are a separate next stage.</p>
-  </section>;
+import {generateNpcPopulation,type PopulationNpc} from "../lib/npcPopulation";
+import {npcApi,type NpcProfile} from "../api";
+type Category="All"|"Business"|"Education"|"Healthcare"|"Transport"|"Creative"|"Skilled trades"|"Public services"|"Community";
+const categories:Category[]=["All","Business","Education","Healthcare","Transport","Creative","Skilled trades","Public services","Community"];
+const roleCategory:Record<string,Category>={Shopkeeper:"Business","Food vendor":"Business","Market trader":"Business",Chef:"Business",Receptionist:"Business",Teacher:"Education",Student:"Education",Librarian:"Education",Nurse:"Healthcare",Doctor:"Healthcare","Bus driver":"Transport","Delivery rider":"Transport",Artist:"Creative",Musician:"Creative",Photographer:"Creative","Hair stylist":"Creative",Barber:"Creative",Designer:"Creative",Journalist:"Creative",Mechanic:"Skilled trades",Tailor:"Skilled trades",Engineer:"Skilled trades",Electrician:"Skilled trades",Plumber:"Skilled trades",Builder:"Skilled trades",Farmer:"Skilled trades",Gardener:"Skilled trades","Security officer":"Public services",Cleaner:"Public services","Community volunteer":"Community"};
+function categoryFor(npc:PopulationNpc):Category{return roleCategory[npc.role]??"Community";}
+function toNpc(npc:NpcProfile):PopulationNpc{return{id:npc.id,name:npc.name,role:npc.role,dialogue:npc.dialogue,position:[npc.x,0,npc.z],radius:npc.radius,personality:npc.personality,routine:npc.routine,greeting:npc.greeting,populationGenerated:true};}
+export default function PopulationLibrary({onPreview}:{onPreview:(npc:PopulationNpc)=>void}){
+ const[query,setQuery]=useState(""),[category,setCategory]=useState<Category>("All"),[visibleCount,setVisibleCount]=useState(12),[population,setPopulation]=useState<PopulationNpc[]>([]),[loading,setLoading]=useState(true),[source,setSource]=useState<"database"|"fallback">("database"),[loadError,setLoadError]=useState("");
+ useEffect(()=>{let active=true;npcApi.list(1200).then(result=>{if(!active)return;setPopulation(result.npcs.map(toNpc));setSource("database");setLoadError("");}).catch(error=>{if(!active)return;setPopulation(generateNpcPopulation(1200));setSource("fallback");setLoadError(error instanceof Error?error.message:"Database unavailable; local catalogue loaded.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[]);
+ const filtered=useMemo(()=>{const term=query.trim().toLowerCase();return population.filter(npc=>(category==="All"||categoryFor(npc)===category)&&(!term||[npc.name,npc.role,npc.personality,npc.routine,npc.greeting,npc.id].some(value=>value.toLowerCase().includes(term))));},[population,query,category]);
+ const visibleNpcs=filtered.slice(0,visibleCount);useEffect(()=>{setVisibleCount(12);},[query,category]);
+ return <section className="population-library">
+ <div className="population-library-top"><div><span className="eyebrow">NEXUS CHARACTER DATABASE</span><h2>Resident index</h2><p>NPC profiles load from the permanent catalogue. 3D models activate only as cards enter view.</p></div><div className="population-total"><b>{loading?"…":population.length.toLocaleString()}</b><span>NPC PROFILES</span></div></div>
+ <div className="population-search-row"><label className="population-search"><span>⌕</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Search NPCs, roles, traits or IDs…" aria-label="Search NPC library"/>{query&&<button type="button" onClick={()=>setQuery("")} aria-label="Clear search">×</button>}</label><span className="population-results">{filtered.length.toLocaleString()} MATCHING NPCs</span></div>
+ <div className="population-category-list" aria-label="Filter NPCs by category">{categories.map(item=><button type="button" key={item} className={category===item?"active":""} onClick={()=>setCategory(item)}>{item}<span>{population.filter(npc=>item==="All"||categoryFor(npc)===item).length}</span></button>)}</div>
+ <div className="population-index-heading"><div><b>{category==="All"?"All residents":category}</b><small>{source==="database"?"Stored NPC profiles · Ara 3D previews load on demand":"Local fallback catalogue · database connection unavailable"}</small></div><span>SHOWING {visibleNpcs.length.toLocaleString()} / {filtered.length.toLocaleString()}</span></div>
+ {loadError&&<div className="population-db-warning" role="status">Database connection unavailable; this session is using the local catalogue. {loadError}</div>}
+ {loading&&<div className="population-loading" role="status"><span className="npc-loading-orb"/>Loading the NPC catalogue…</div>}
+ {!loading&&(filtered.length?<div className="population-card-grid">{visibleNpcs.map((npc,index)=><article className="population-card" key={npc.id}><div className="population-preview-box" style={{"--avatar-hue":(index*47+24)%360} as React.CSSProperties}><div className="population-preview-glow"/><AraCharacterCard id={npc.id} name={npc.name} index={index}/><span className="population-preview-caption">FULL BODY · {String(index+1).padStart(4,"0")}</span></div><div className="population-card-copy"><b>{npc.name}</b><small>{npc.role}</small><em>{categoryFor(npc)} · {npc.personality}</em></div><button type="button" className="population-preview-button" onClick={()=>onPreview(npc)}>Preview & customise <span>↗</span></button></article>)}</div>:<div className="population-empty"><b>No NPCs found</b><span>Try another name, role, personality or category.</span><button type="button" onClick={()=>{setQuery("");setCategory("All");}}>Clear filters</button></div>)}
+ {!loading&&visibleCount<filtered.length&&<button className="population-load-more" type="button" onClick={()=>setVisibleCount(count=>Math.min(count+12,filtered.length))}>Load 12 more residents <span>↓</span></button>}
+ <p className="population-library-foot">D1 stores each NPC's identity, role, personality, routine, dialogue, spawn position and appearance seed. Ara starter models are still fetched from Ara when needed; downloadable model files and pre-rendered portraits are a separate asset-storage stage.</p>
+ </section>;
 }
