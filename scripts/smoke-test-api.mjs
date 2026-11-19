@@ -11,6 +11,25 @@ if (!health.response.ok || health.body?.ok !== true || health.body?.databaseRead
   throw new Error(`Health check failed (${health.response.status}): ${JSON.stringify(health.body)}`);
 }
 
+const npcCatalogue = await readJson("/api/npcs?limit=3");
+if (!npcCatalogue.response.ok || !Array.isArray(npcCatalogue.body?.npcs) || npcCatalogue.body.npcs.length === 0 || Number(npcCatalogue.body.total) < 1200 || npcCatalogue.body.source !== "cloudflare-d1") {
+  throw new Error(`NPC catalogue check failed (${npcCatalogue.response.status}): ${JSON.stringify(npcCatalogue.body)}`);
+}
+
+const assetCatalogue = await readJson("/api/assets?limit=3");
+if (!assetCatalogue.response.ok || !Array.isArray(assetCatalogue.body?.assets) || assetCatalogue.body.source !== "cloudflare-d1-metadata") {
+  throw new Error(`Asset catalogue check failed (${assetCatalogue.response.status}): ${JSON.stringify(assetCatalogue.body)}`);
+}
+
+const invalidAssetPrompt = await readJson("/api/assets/generate", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ prompt: "tiny" }),
+});
+if (invalidAssetPrompt.response.status !== 400 || typeof invalidAssetPrompt.body?.error !== "string") {
+  throw new Error(`Invalid asset prompt was not rejected safely (${invalidAssetPrompt.response.status}): ${JSON.stringify(invalidAssetPrompt.body)}`);
+}
+
 const projects = await readJson("/api/projects");
 if (!projects.response.ok || !Array.isArray(projects.body?.projects)) {
   throw new Error(`Project listing failed (${projects.response.status}): ${JSON.stringify(projects.body)}`);
@@ -67,4 +86,4 @@ if (!worldGeneration.response.ok || !worldGeneration.body?.validated || !Array.i
   throw new Error(`World generation failed (${worldGeneration.response.status}): ${JSON.stringify(worldGeneration.body)}`);
 }
 
-console.log("API smoke tests passed: health, projects, persistent tasks and generated world scene.");
+console.log("API smoke tests passed: health, NPC catalogue, asset catalogue, projects, persistent tasks and generated world scene.");
