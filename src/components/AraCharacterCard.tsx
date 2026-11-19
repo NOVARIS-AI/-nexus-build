@@ -43,7 +43,7 @@ function loadAraEngine(): Promise<void> {
 let activeCards = 0;
 const waiting: Array<() => void> = [];
 function pump() {
-  while (activeCards < 4 && waiting.length) {
+  while (activeCards < 1 && waiting.length) {
     activeCards++;
     waiting.shift()?.();
   }

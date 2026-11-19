@@ -5,6 +5,7 @@ import ToolchainStudio from "./components/ToolchainStudio";
 import GameplayStudio from "./components/GameplayStudio";
 import NPCLibrary from "./components/NPCLibrary";
 import PopulationLibrary from "./components/PopulationLibrary";
+import PageErrorBoundary from "./components/PageErrorBoundary";
 import type { Project } from "./api";
 import type { PopulationNpc } from "./lib/npcPopulation";
 
@@ -87,7 +88,7 @@ export default function App() {
       <header className="topbar"><div className="breadcrumb"><span className="crumb">Nexus Build</span><span className="slash">/</span><b>{meta.title}</b></div><div className="top-actions"><span className="saved"><i/> Workspace ready</span>{currentProject && <span className="current-project-chip">{currentProject.name}</span>}<button className="publish" onClick={() => setPage("gameplay")}>▶ Playtest</button></div></header>
       <div className="content page-content">
         <div className="page-heading"><div><div className="eyebrow">{meta.eyebrow}</div><h1>{meta.title}</h1><p>{meta.subtitle}</p></div><div className="version">EARLY ACCESS <b>0.1.0</b></div></div>
-        {renderPage()}
+        <PageErrorBoundary key={page}>{renderPage()}</PageErrorBoundary>
       </div>
     </section>
   </main>;

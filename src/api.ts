@@ -28,3 +28,20 @@ export const projectApi = {
     (await request<{ project: Project }>(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) })).project,
   remove: (id: string) => request<{ deleted: boolean }>(`/api/projects/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
+
+export type NpcProfile = {
+  id: string; name: string; role: string; dialogue: string; x: number; z: number; radius: number;
+  personality: string; routine: string; greeting: string; appearance_json: string;
+  preview_url?: string | null; model_url?: string | null;
+};
+export type NpcCatalogueResponse = { npcs: NpcProfile[]; total: number; limit: number; offset: number; nextOffset: number | null; source: string };
+export const npcApi = {
+  list: async (limit = 1200, offset = 0, query = ""): Promise<NpcCatalogueResponse> => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (query.trim()) params.set("q", query.trim());
+    const response = await fetch(`/api/npcs?${params.toString()}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error ?? `NPC catalogue request failed (${response.status})`);
+    return data as NpcCatalogueResponse;
+  }
+};

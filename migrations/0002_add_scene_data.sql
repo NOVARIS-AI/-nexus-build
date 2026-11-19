@@ -1,1 +1,0 @@
-ALTER TABLE projects ADD COLUMN scene_json TEXT NOT NULL DEFAULT '{}';
