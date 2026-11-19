@@ -99,3 +99,12 @@ export function seededHumanChoice(seed: string, options: readonly string[]): str
   for (let i = 0; i < seed.length; i++) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619);
   return options[(hash >>> 0) % options.length];
 }
+
+export function getAraCharacterAppearance(id: string) {
+  return {
+    preset: seededHumanChoice(id + "-preset", ["The Female Executive", "The Adventurer", "The Detective", "The Athlete"]),
+    outfit: seededHumanChoice(id + "-outfit", ["#6685a8", "#a66d69", "#668b75", "#b18a57", "#8675a8", "#5f9294", "#9a718f", "#8a795f"]),
+    shoes: seededHumanChoice(id + "-shoes", ["#29252b", "#343c4c", "#4b3d35", "#293c38"]),
+    carry: "#8a6549"
+  };
+}
