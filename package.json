@@ -7,6 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "check:migrations": "node scripts/check-migrations.mjs",
     "db:migrate": "wrangler d1 migrations apply nexus-build-db --remote",
     "deploy": "wrangler deploy"
   },
