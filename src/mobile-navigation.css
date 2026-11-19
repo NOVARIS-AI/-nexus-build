@@ -1,0 +1,70 @@
+/* Mobile navigation: keep every destination visible and reachable. */
+@media (max-width: 850px) {
+  .shell { min-height: 100vh; }
+  .sidebar {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    height: 78px;
+    padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+    display: block;
+    border-right: 0;
+    border-top: 1px solid #39343d;
+    background: rgba(19, 18, 23, .97);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .sidebar .brand,
+  .sidebar .workspace-label,
+  .sidebar .side-bottom { display: none !important; }
+  .primary-nav {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .primary-nav::-webkit-scrollbar { display: none; }
+  .primary-nav .nav {
+    display: flex;
+    flex: 1 0 68px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    max-width: 112px;
+    height: 100%;
+    margin: 0;
+    padding: 5px 3px;
+    border-radius: 9px;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+  .primary-nav .nav span { display: block !important; }
+  .primary-nav .nav .nav-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .primary-nav .nav.active {
+    background: #342c32;
+    color: #f0c18e;
+  }
+  .main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 380px) {
+  .sidebar { padding-left: 5px; padding-right: 5px; }
+  .primary-nav { gap: 2px; }
+  .primary-nav .nav { flex-basis: 62px; font-size: 8px; }
+  .primary-nav .nav .nav-icon { font-size: 17px; }
+}
