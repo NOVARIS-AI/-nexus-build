@@ -1,9 +1,12 @@
 export type AccessIdentity = { subject: string };
 type Claims = { sub?: string; iss?: string; aud?: string | string[]; exp?: number; nbf?: number };
-function decode(value: string): Uint8Array {
+function decode(value: string): ArrayBuffer {
  const base64=value.replace(/-/g,"+").replace(/_/g,"/");
  const padded=base64+"=".repeat((4-base64.length%4)%4);
- return Uint8Array.from(atob(padded), c=>c.charCodeAt(0));
+ const bytes=Uint8Array.from(atob(padded), c=>c.charCodeAt(0));
+ const buffer=new ArrayBuffer(bytes.length);
+ new Uint8Array(buffer).set(bytes);
+ return buffer;
 }
 export async function verifyCloudflareAccess(request: Request, teamDomain: string, expectedAudience: string): Promise<AccessIdentity | null> {
  let domain=teamDomain.trim().replace("https://","").replace("http://",""); if(domain.endsWith("/"))domain=domain.slice(0,-1);
