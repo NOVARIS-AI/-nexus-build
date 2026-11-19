@@ -18,10 +18,9 @@ function categoryFor(npc: PopulationNpc): Category {
 function initials(name: string) {
   return name.split(/\s+/).slice(0, 2).map(part => part[0] ?? "").join("").toUpperCase();
 }
-export default function PopulationLibrary() {
+export default function PopulationLibrary({ onPreview }: { onPreview: (npc: PopulationNpc) => void }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("All");
-  const [expanded, setExpanded] = useState<string | null>(null);
   const population = useMemo(() => generateNpcPopulation(1200), []);
   const counts = useMemo(() => categories.reduce((result, item) => {
     result[item] = item === "All" ? population.length : population.filter(npc => categoryFor(npc) === item).length;
@@ -49,17 +48,13 @@ export default function PopulationLibrary() {
     </div>
     <div className="population-index-heading"><div><b>{category === "All" ? "All residents" : category}</b><small>Sorted by generated index · Select a profile to inspect its details</small></div><span>SHOWING {filtered.length.toLocaleString()} / {population.length.toLocaleString()}</span></div>
     {filtered.length ? <div className="population-card-grid">
-      {filtered.map((npc, index) => <article className={expanded === npc.id ? "population-card expanded" : "population-card"} key={npc.id}>
-        <button type="button" className="population-card-main" onClick={() => setExpanded(current => current === npc.id ? null : npc.id)} aria-expanded={expanded === npc.id}>
-          <span className="population-avatar" style={{"--avatar-hue": (index * 47 + 24) % 360} as React.CSSProperties}>{initials(npc.name)}</span>
-          <span className="population-card-copy"><b>{npc.name}</b><small>{npc.role}</small><em>{categoryFor(npc)} · {npc.personality}</em></span>
-          <span className="population-card-arrow">{expanded === npc.id ? "−" : "+"}</span>
-        </button>
-        {expanded === npc.id && <div className="population-card-detail">
-          <div><span>PROFILE ID</span><b>{npc.id}</b></div>
-          <div><span>DAILY ROUTINE</span><b>{npc.routine}</b></div>
-          <p>“{npc.greeting}”</p><small>{npc.dialogue}</small>
-        </div>}
+      {filtered.map((npc, index) => <article className="population-card" key={npc.id}>
+        <div className="population-preview-box" style={{"--avatar-hue": (index * 47 + 24) % 360} as React.CSSProperties}>
+          <div className="population-preview-glow" /><div className="population-preview-person"><span className="population-preview-head"/><span className="population-preview-body"/><span className="population-preview-leg left"/><span className="population-preview-leg right"/></div>
+          <span className="population-preview-caption">NPC PROFILE · {String(index + 1).padStart(4,"0")}</span>
+        </div>
+        <div className="population-card-copy"><b>{npc.name}</b><small>{npc.role}</small><em>{categoryFor(npc)} · {npc.personality}</em></div>
+        <button type="button" className="population-preview-button" onClick={() => onPreview(npc)}>Preview & customise <span>↗</span></button>
       </article>)}
     </div> : <div className="population-empty"><b>No NPCs found</b><span>Try another name, role, personality or category.</span><button type="button" onClick={() => { setQuery(""); setCategory("All"); }}>Clear filters</button></div>}
     <p className="population-library-foot">These are 1,200 generated resident profiles with varied names, roles, routines and personalities—not 1,200 individually modelled 3D characters. Add or customise characters in NPC Studio.</p>
