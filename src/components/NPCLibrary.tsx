@@ -69,7 +69,7 @@ function loadAraEngine(): Promise<void> {
 
     script = document.createElement("script");
     script.type = "module";
-    script.src = "https://cdn.jsdelivr.net/npm/ara3d@0/dist/embed.js";
+    script.src = "https://cdn.jsdelivr.net/npm/ara3d@0.9.0/dist/embed.js";
     script.dataset.araEmbed = "true";
     script.addEventListener("load", () => {
       script!.dataset.araLoaded = "true";
@@ -138,9 +138,10 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
         setModelLoaded(true);
         setStatus("3D CHARACTER READY · DRAG TO ROTATE");
       }, { once: true });
-      character.addEventListener("error", () => {
+      character.addEventListener("error", (event) => {
         window.clearTimeout(modelTimeout);
-        setStatus("Character data did not load. Tap Retry.");
+        const detail = event instanceof CustomEvent ? event.detail as { message?: string } | undefined : undefined;
+        setStatus(detail?.message ? `Character data error: ${detail.message}` : "Character data did not load. Tap Retry.");
       }, { once: true });
       host.current.replaceChildren(character);
     } catch (error) {
