@@ -6,7 +6,7 @@ function decode(value: string): Uint8Array {
  return Uint8Array.from(atob(padded), c=>c.charCodeAt(0));
 }
 export async function verifyCloudflareAccess(request: Request, teamDomain: string, expectedAudience: string): Promise<AccessIdentity | null> {
- const domain=teamDomain.trim().replace("https://","").replace("http://","").replace(/\\/$/,"");
+ let domain=teamDomain.trim().replace("https://","").replace("http://",""); if(domain.endsWith("/"))domain=domain.slice(0,-1);
  if(!domain||!expectedAudience)return null;
  const token=request.headers.get("cf-access-jwt-assertion");
  if(!token)return null;
