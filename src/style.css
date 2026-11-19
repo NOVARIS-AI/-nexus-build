@@ -566,3 +566,8 @@
 .nexus-humanforge-export-button:disabled{opacity:.55;cursor:wait}
 .nexus-humanforge-export>small{grid-column:1;grid-row:3;color:#c9b08f;font-size:9px;line-height:1.5}
 @media(max-width:700px){.nexus-humanforge-export{display:flex;flex-direction:column;align-items:stretch}.nexus-humanforge-export-preview{width:100%}.nexus-humanforge-export-button{align-self:flex-start}}
+
+.human-environment-controls{display:grid;gap:8px;margin:12px 0;padding:11px;border:1px solid #51433c;border-radius:9px;background:linear-gradient(145deg,rgba(120,91,65,.16),rgba(33,29,39,.65))}
+.human-environment-controls>.human-override-title{margin:0;color:#e4bd8e}
+.human-environment-controls>small{color:#a99da7;font-size:9px;line-height:1.5}
+.human-environment-controls>label{display:grid;gap:5px;color:#d4c7d2;font-size:9px}
