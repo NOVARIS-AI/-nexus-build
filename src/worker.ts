@@ -3,7 +3,7 @@ import { createFallbackWorld, sanitizeWorldObjects, validateWorldPlan, type Worl
 interface D1Result<T = Record<string, unknown>> { results?: T[]; success: boolean; meta?: { changes?: number }; }
 interface D1Statement { bind(...values: unknown[]): D1Statement; first<T = Record<string, unknown>>(): Promise<T | null>; all<T = Record<string, unknown>>(): Promise<D1Result<T>>; run(): Promise<D1Result>; }
 interface D1Database { prepare(query: string): D1Statement; batch(statements: D1Statement[]): Promise<D1Result[]>; }
-interface WorkersAI { run(model:string,input:{messages:{role:"system"|"user"|"assistant";content:string}[];max_tokens?:number;temperature?:number}):Promise<{response?:string}>; }
+interface WorkersAI { run(model:string,input:Record<string,unknown>):Promise<{response?:string;image?:string}>; }
 interface Env { DB: D1Database; AI: WorkersAI; ASSETS: { fetch(request: Request): Promise<Response> }; }
 const firstNames=["Amina","Ayo","Bisi","Chika","Dami","Efe","Emeka","Faruq","Fola","Hadiza","Ife","Ikenna","Jide","Kelechi","Lara","Mariam","Nneka","Obinna","Ola","Olu","Onyeka","Sade","Tari","Tobi","Uche","Zainab","Ada","Boma","Chinwe","David","Ejiro","Farida","Gbenga","Hauwa","Ini","Jumoke","Kemi","Lekan","Moyo","Ngozi","Oghene","Rita","Seyi","Temi","Umar","Yemi","Zara","Abiola","Blessing","Chinedu","Daniel","Esther","Femi","Grace","Ibrahim","Joy","Kunle","Musa","Nana","Peter","Samuel","Tunde"];
 const surnames=["Adebayo","Adeyemi","Afolabi","Agu","Akande","Anyanwu","Balogun","Bello","Chukwu","Danjuma","Eze","Ezeani","Falana","Garba","Ibrahim","Idris","Iheanacho","Johnson","Kalu","Lawal","Musa","Nwosu","Obi","Okafor","Okeke","Okoro","Oladipo","Olawale","Osei","Sani","Soyinka","Udo","Usman","Yakubu","Yusuf","Abubakar","Akinyemi","Bakare","Duru","Etim","Iroko","Jatau","Kehinde","Mordi","Nwachukwu","Ojo","Oni","Salami"];
@@ -44,6 +44,57 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   }
  }
 
+
+ if(url.pathname==="/api/assets"&&request.method==="GET"){
+  try{
+   const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(50,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
+   const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim().slice(0,120),type=(url.searchParams.get("type")??"").trim();
+   const clauses:string[]=[],args:(string|number)[]=[];
+   if(term){clauses.push("(name LIKE ? OR asset_type LIKE ? OR prompt LIKE ?)");args.push("%"+term+"%","%"+term+"%","%"+term+"%");}
+   if(type){clauses.push("asset_type = ?");args.push(type);}
+   const where=clauses.length?" WHERE "+clauses.join(" AND "):"";
+   const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM asset_catalogue"+where).bind(...args).first<{total:number}>();
+   const rows=await env.DB.prepare("SELECT id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at FROM asset_catalogue"+where+" ORDER BY updated_at DESC LIMIT ? OFFSET ?").bind(...args,limit,offset).all();
+   const total=count?.total??0,loaded=rows.results?.length??0;
+   return json({assets:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1-metadata"});
+  }catch(error){return json({error:error instanceof Error?error.message:"Asset catalogue unavailable."},503);}
+ }
+ if(url.pathname==="/api/assets/register"&&request.method==="POST"){
+  try{
+   let body:{id?:string;name?:string;assetType?:string;prompt?:string;promptKey?:string;mimeType?:string;sizeBytes?:number;source?:string;model?:string;license?:string;tags?:unknown};
+   try{body=await request.json();}catch{return json({error:"Send valid asset metadata."},400);}
+   const idValue=(body.id??"").trim(),name=(body.name??"").trim(),assetType=(body.assetType??"").trim();
+   if(!/^[a-zA-Z0-9_-]{1,100}$/.test(idValue)||!name||name.length>140||!assetType||assetType.length>40)return json({error:"Asset ID, name and type are required."},400);
+   const prompt=(body.prompt??"").trim().slice(0,2048),promptKey=(body.promptKey??"").trim().slice(0,260),mimeType=(body.mimeType??"application/octet-stream").slice(0,100);
+   const sizeBytes=Number.isFinite(body.sizeBytes)?Math.max(0,Math.min(100*1024*1024,Math.floor(body.sizeBytes as number))):0;
+   const source=body.source==="workers-ai"?"workers-ai":"imported",model=(body.model??"").slice(0,120),license=(body.license??"user-supplied-or-model-terms").slice(0,160);
+   const tags=Array.isArray(body.tags)?body.tags.filter((tag):tag is string=>typeof tag==="string").slice(0,24):[];
+   const timestamp=now();
+   await env.DB.prepare("INSERT INTO asset_catalogue (id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,asset_type=excluded.asset_type,prompt=excluded.prompt,prompt_key=excluded.prompt_key,mime_type=excluded.mime_type,size_bytes=excluded.size_bytes,source=excluded.source,model=excluded.model,license=excluded.license,tags_json=excluded.tags_json,updated_at=excluded.updated_at").bind(idValue,name,assetType,prompt,promptKey,mimeType,sizeBytes,source,model,license,JSON.stringify(tags),timestamp,timestamp).run();
+   return json({saved:true,id:idValue,source:"cloudflare-d1-metadata"},201);
+  }catch(error){return json({error:error instanceof Error?error.message:"Could not register asset metadata."},503);}
+ }
+ if(url.pathname==="/api/assets/generate"&&request.method==="POST"){
+  let taskId="";
+  try{
+   let body:{prompt?:string;assetType?:string};
+   try{body=await request.json();}catch{return json({error:"Send a valid asset prompt."},400);}
+   const prompt=(body.prompt??"").trim().slice(0,2048),assetType=(body.assetType??"Texture").trim();
+   if(prompt.length<12)return json({error:"Describe the asset in at least 12 characters."},400);
+   if(!["Texture","Concept art","Sprite"].includes(assetType))return json({error:"Choose Texture, Concept art or Sprite."},400);
+   taskId="asset-"+crypto.randomUUID();
+   const timestamp=now(),taskInput=JSON.stringify({prompt,assetType,model:"@cf/black-forest-labs/flux-1-schnell"});
+   await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").bind(taskId,"asset-image","running",taskInput,"cloudflare-workers-ai-flux",timestamp,timestamp).run();
+   const imageResult=await env.AI.run("@cf/black-forest-labs/flux-1-schnell",{prompt,steps:4});
+   const image=imageResult.image;
+   if(typeof image!=="string"||image.length<100||image.length>12000000)throw new Error("Image generation returned an invalid or oversized result.");
+   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(JSON.stringify({assetType,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",prompt}),now(),taskId).run();
+   return json({imageDataUrl:"data:image/jpeg;base64,"+image,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",taskId,assetType,source:"cloudflare-workers-ai"},201);
+  }catch(error){
+   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=?").bind(error instanceof Error?error.message:"Image generation failed.",now(),taskId).run();}catch{}}
+   return json({error:error instanceof Error?error.message:"AI image generation is temporarily unavailable."},503);
+  }
+ }
  if(url.pathname==="/api/npcs/generate"&&request.method==="POST"){
   try{
    let body:{description?:string;category?:string};
