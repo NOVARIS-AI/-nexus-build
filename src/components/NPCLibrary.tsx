@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import HumanForgeStudio from "./HumanForgeStudio";
 import NPCProductionHub from "./NPCProductionHub";
+import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
 
 type CharacterSettings = {
   preset: string;
@@ -92,13 +93,16 @@ function validAraShare(value: string) {
   }
 }
 
-function AraCharacterStudio() {
+function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string } | null }) {
+  const characterDefaults: CharacterSettings = selectedNpc
+    ? { ...DEFAULTS, ...getAraCharacterAppearance(selectedNpc.id), expression: "neutral" }
+    : DEFAULTS;
   const host = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Preparing 3D preview…");
   const [attempt, setAttempt] = useState(0);
   const [modelLoaded, setModelLoaded] = useState(false);
-  const [draft, setDraft] = useState<CharacterSettings>(DEFAULTS);
-  const [applied, setApplied] = useState<CharacterSettings>(DEFAULTS);
+  const [draft, setDraft] = useState<CharacterSettings>(characterDefaults);
+  const [applied, setApplied] = useState<CharacterSettings>(characterDefaults);
   const [message, setMessage] = useState("Choose the appearance options, then apply them to the live model.");
 
   const mountCharacter = useCallback(async () => {
@@ -164,8 +168,8 @@ function AraCharacterStudio() {
   };
 
   const resetSettings = () => {
-    setDraft(DEFAULTS);
-    setApplied(DEFAULTS);
+    setDraft(characterDefaults);
+    setApplied(characterDefaults);
     setMessage("Back to the starter character.");
   };
 
@@ -189,11 +193,11 @@ function AraCharacterStudio() {
         </div>
         <div className="npc-asset-info">
           <div className="npc-asset-title">
-            <div><h3>Amara · City Administrator</h3><p>Reusable human NPC · sample character</p></div>
-            <span className="npc-asset-tag">EDITABLE SAMPLE</span>
+            <div><h3>{selectedNpc ? `${selectedNpc.name} · ${selectedNpc.role}` : "Amara · City Administrator"}</h3><p>{selectedNpc ? "Selected NPC · matched Ara 3D preview" : "Reusable human NPC · sample character"}</p></div>
+            <span className="npc-asset-tag">{selectedNpc ? "SELECTED NPC" : "EDITABLE SAMPLE"}</span>
           </div>
           <div className="npc-asset-tags"><span>Real human mesh</span><span>Rigged</span><span>Animated</span><span>{applied.detail} detail</span></div>
-          <p className="npc-asset-description">Edit the sample below, or import a complete character design from Ara. The model can be rotated and zoomed in this viewport.</p>
+          <p className="npc-asset-description">{selectedNpc ? "This is the same Ara preset and deterministic appearance used for this NPC in the Library. Customise it here or import a saved Ara share design." : "Edit the sample below, or import a complete character design from Ara. The model can be rotated and zoomed in this viewport."}</p>
           <div className="npc-asset-meta"><span>MODEL <b>Ara 3D · CC0 character data</b></span><span>PREVIEW <b>{modelLoaded ? "Ready" : "Loading"}</b></span></div>
         </div>
       </article>
@@ -265,14 +269,14 @@ function AraCharacterStudio() {
 
 
 export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null; onBack?: () => void }) {
-  const [studio, setStudio] = useState<"humanforge" | "ara">("humanforge");
+  const [studio, setStudio] = useState<"humanforge" | "ara">(selectedNpc ? "ara" : "humanforge");
   return <section className="npc-library-shell">
     {selectedNpc && <button type="button" className="npc-library-back" onClick={onBack}>← Back to NPC Library</button>}
     <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
       <button type="button" role="tab" aria-selected={studio === "humanforge"} className={studio === "humanforge" ? "active" : ""} onClick={() => setStudio("humanforge")}>In-app Human Creator</button>
       <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>
     </div>
-    {studio === "humanforge" ? <HumanForgeStudio selectedNpc={selectedNpc} /> : <AraCharacterStudio />}
+    {studio === "humanforge" ? <HumanForgeStudio selectedNpc={selectedNpc} /> : <AraCharacterStudio selectedNpc={selectedNpc} />}
     <NPCProductionHub />
   </section>;
 }
