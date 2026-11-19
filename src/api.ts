@@ -37,3 +37,19 @@ export const npcApi={
  generate:async(description:string,category="All"):Promise<GeneratedNpcResponse>=>request<GeneratedNpcResponse>("/api/npcs/generate",{method:"POST",body:JSON.stringify({description,category})}),
  saveCharacter:async(id:string,config:Record<string,unknown>)=>request<{saved:boolean;id:string}>("/api/npcs/"+encodeURIComponent(id)+"/character",{method:"PUT",body:JSON.stringify({config})})
 };
+
+
+export type AssetCatalogueRecord={id:string;name:string;asset_type:string;prompt:string;prompt_key:string;mime_type:string;size_bytes:number;source:string;model:string;license:string;tags_json:string;created_at:string;updated_at:string};
+export type GeneratedImageAsset={imageDataUrl:string;mimeType:string;model:string;taskId:string;assetType:string;source:string};
+export const assetApi={
+ list:async(limit=24,offset=0,query="",type="")=>{
+  const params=new URLSearchParams({limit:String(limit),offset:String(offset)});
+  if(query.trim())params.set("q",query.trim());
+  if(type)params.set("type",type);
+  return request<{assets:AssetCatalogueRecord[];total:number;limit:number;offset:number;nextOffset:number|null;source:string}>("/api/assets?"+params.toString());
+ },
+ generateImage:(prompt:string,assetType:"Texture"|"Concept art"|"Sprite"="Texture")=>
+  request<GeneratedImageAsset>("/api/assets/generate",{method:"POST",body:JSON.stringify({prompt,assetType})}),
+ register:(asset:{id:string;name:string;assetType:string;prompt?:string;promptKey?:string;mimeType:string;sizeBytes:number;source:"imported"|"workers-ai";model?:string;license?:string;tags?:string[]})=>
+  request<{saved:boolean;id:string;source:string}>("/api/assets/register",{method:"POST",body:JSON.stringify(asset)})
+};
