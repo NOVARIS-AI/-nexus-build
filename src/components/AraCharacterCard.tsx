@@ -45,7 +45,7 @@ export function preloadAraEngine() { void loadAraEngine().catch(() => undefined)
 let activeCards = 0;
 const waiting: Array<() => void> = [];
 function pump() {
-  while (activeCards < 1 && waiting.length) {
+  while (activeCards < 3 && waiting.length) {
     activeCards++;
     waiting.shift()?.();
   }
