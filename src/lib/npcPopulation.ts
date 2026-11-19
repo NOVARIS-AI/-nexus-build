@@ -1,3 +1,4 @@
+import type { HumanConfig } from "humanforge/human";
 export type PopulationNpc = {
   id: string;
   name: string;
@@ -9,7 +10,7 @@ export type PopulationNpc = {
   routine: string;
   greeting: string;
   populationGenerated: true;
-  appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; dailySchedule?: string; behaviourNotes?: string; humanFeatures?: Record<string, boolean>; humanFoundationVersion?: number; humanConfig?: Record<string, unknown> };
+  appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; dailySchedule?: string; behaviourNotes?: string; humanFeatures?: Record<string, boolean>; humanFoundationVersion?: number; humanConfig?: Partial<HumanConfig> };
   humanFeatures?: Record<string, boolean>;
 };
 
