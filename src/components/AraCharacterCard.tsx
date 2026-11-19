@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
-import { loadAraEngine } from "../lib/araEngine";
+import { formatAraDiagnosticSummary, loadAraEngine } from "../lib/araEngine";
 
 type Props = { id: string; name: string; index: number; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string } };
 
@@ -87,19 +87,19 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           const detail = event instanceof CustomEvent
             ? event.detail as { message?: string } | undefined
             : undefined;
-          setStatus(detail?.message ? `3D model error: ${detail.message}` : "3D character data unavailable · check connection");
+          setStatus(`${detail?.message ? `3D model error: ${detail.message}` : "3D character data unavailable"} · ${formatAraDiagnosticSummary()}`);
           if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, { once: true });
         host.current.replaceChildren(character);
         element = character;
         timeout = window.setTimeout(() => {
           if (cancelled || modelReady) return;
-          setStatus("3D data is taking too long · scroll away and back to retry");
+          setStatus(`3D data is taking too long · ${formatAraDiagnosticSummary()}`);
           character.remove();
           if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, 30000);
       }).catch((error) => {
-        if (!cancelled) setStatus(error instanceof Error ? error.message : "Ara 3D engine unavailable · tap retry");
+        if (!cancelled) setStatus(`${error instanceof Error ? error.message : "Ara 3D engine unavailable"} · ${formatAraDiagnosticSummary()}`);
         if (hasSlot) { releaseSlot(); hasSlot = false; }
       });
     });
