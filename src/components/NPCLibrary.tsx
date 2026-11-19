@@ -262,7 +262,7 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
     <div className="npc-library-note npc-library-note-wide">
       <div className="npc-note-icon">✦</div>
       <b>Growing the NPC catalogue</b>
-      <p>One real 3D sample is connected now. The long-term target is a large searchable library of reusable characters, with one interactive preview at a time to keep mobile performance manageable.</p>
+      <p>The resident index now contains 1,200+ profiles with streamed Ara 3D previews. Each selected resident opens in the Ara studio with the same deterministic starter preset and colour profile; the gallery limits concurrent 3D previews to protect mobile performance.</p>
     </div>
   </section>;
 }
