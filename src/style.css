@@ -435,3 +435,50 @@
  .director-page .director{padding:13px}
  .director-page .director textarea{height:130px;min-height:130px}
 }
+
+
+/* Dedicated searchable NPC resident index */
+.population-library{min-width:0}
+.population-library-top{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:19px;border:1px solid #3b3540;border-radius:12px;background:linear-gradient(135deg,#242029,#19171e)}
+.population-library-top h2{margin:6px 0 5px;color:#f1eaf2;font:600 22px 'Space Grotesk'}
+.population-library-top p{max-width:620px;margin:0;color:#9b929f;font-size:10px;line-height:1.6}
+.population-total{display:grid;gap:3px;min-width:92px;text-align:right}
+.population-total b{color:#e7b989;font:600 28px 'Space Grotesk'}
+.population-total span,.population-results,.population-index-heading>span{color:#988b9b;font:8px 'DM Mono';letter-spacing:.7px}
+.population-search-row{display:flex;align-items:center;gap:12px;margin:14px 0 10px}
+.population-search{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:0 12px;border:1px solid #403944;border-radius:8px;background:#17151c;color:#c9bdcc}
+.population-search>span{font-size:20px;color:#d4a879}
+.population-search input{width:100%;min-width:0;padding:12px 0;border:0;outline:0;background:transparent;color:#f0e9f0;font:10px 'DM Sans'}
+.population-search input::placeholder{color:#766e7b}
+.population-search button{border:0;background:transparent;color:#c8b6a7;font-size:19px}
+.population-category-list{display:flex;gap:6px;overflow-x:auto;padding:2px 0 9px;scrollbar-width:thin}
+.population-category-list button{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding:8px 10px;border:1px solid #3e3742;border-radius:20px;background:#211e26;color:#b8afbd;font-size:9px;white-space:nowrap}
+.population-category-list button span{color:#8f8493;font:8px 'DM Mono'}
+.population-category-list button.active{border-color:#a47c58;background:#3a302b;color:#f0c18e}
+.population-category-list button.active span{color:#e9bd91}
+.population-index-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}
+.population-index-heading>div{display:grid;gap:4px}
+.population-index-heading b{color:#eee6ef;font:600 14px 'Space Grotesk'}
+.population-index-heading small{color:#8e8693;font-size:9px}
+.population-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:72vh;overflow-y:auto;overscroll-behavior:contain;padding:2px 5px 8px 0;scrollbar-color:#655346 #211e26;scrollbar-width:thin}
+.population-card{min-width:0;align-self:start;overflow:hidden;border:1px solid #3c3540;border-radius:9px;background:#211e26}
+.population-card.expanded{border-color:#9c795a}
+.population-card-main{display:flex;align-items:center;gap:9px;width:100%;min-width:0;padding:10px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.population-avatar{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border:1px solid hsla(var(--avatar-hue),45%,70%,.35);border-radius:10px;background:hsla(var(--avatar-hue),30%,35%,.35);color:hsl(var(--avatar-hue),55%,82%);font:600 11px 'Space Grotesk'}
+.population-card-copy{display:grid;gap:3px;min-width:0;flex:1}
+.population-card-copy b{overflow:hidden;color:#eee7ef;font:600 11px 'Space Grotesk';text-overflow:ellipsis;white-space:nowrap}
+.population-card-copy small{overflow:hidden;color:#b9aebc;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.population-card-copy em{overflow:hidden;color:#9c8d9f;font-size:8px;font-style:normal;text-overflow:ellipsis;white-space:nowrap}
+.population-card-arrow{color:#d6ac82;font-size:17px}
+.population-card-detail{display:grid;gap:8px;padding:10px;border-top:1px solid #403944;background:#1a181f}
+.population-card-detail>div{display:grid;gap:3px;min-width:0}
+.population-card-detail>div span{color:#887d8d;font:7px 'DM Mono';letter-spacing:.6px}
+.population-card-detail>div b{overflow-wrap:anywhere;color:#d7cbd9;font:9px 'DM Sans'}
+.population-card-detail p{margin:2px 0 0;color:#e1bd98;font-size:9px;line-height:1.5}
+.population-card-detail>small{color:#a49aa7;font-size:8px;line-height:1.55}
+.population-empty{display:grid;justify-items:center;gap:8px;padding:35px 15px;border:1px dashed #4a414d;border-radius:10px;color:#eee}
+.population-empty span{color:#9a919e;font-size:10px}
+.population-empty button{margin-top:5px;padding:8px 12px;border:1px solid #806448;border-radius:6px;background:#382e29;color:#eac08f;font-size:9px}
+.population-library-foot{margin:12px 0 0;color:#8f8793;font-size:9px;line-height:1.6}
+@media(max-width:900px){.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.population-library-top{align-items:flex-start;padding:14px}.population-library-top h2{font-size:19px}.population-total{min-width:70px}.population-total b{font-size:23px}.population-search-row{align-items:stretch;flex-direction:column;gap:6px}.population-results{text-align:right}.population-index-heading{align-items:flex-start;flex-direction:column}.population-card-grid{grid-template-columns:1fr;max-height:70vh}.population-card-main{padding:11px}}
