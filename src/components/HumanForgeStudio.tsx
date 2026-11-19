@@ -1,37 +1,96 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { HumanEditor, useHumanPackage } from "humanforge/web";
 import type { HumanConfig } from "humanforge/human";
 
 const HUMAN_ASSETS = "https://cdn.jsdelivr.net/gh/abdulrehman043/humanforge@v0.5.0/assets/human";
-const SAVE_KEY = "nexus-build-character-studio-v1";
+const SAVE_PREFIX = "nexus-build-humanforge-character-v2";
 
 type SavedCharacter = Partial<HumanConfig> | { config: Partial<HumanConfig>; savedAt?: string };
 
-function readSavedConfig(): SavedCharacter | undefined {
+type SelectedNpc = {
+  id: string;
+  name: string;
+  role: string;
+  personality?: string;
+  routine?: string;
+  appearance?: {
+    description?: string;
+    humanConfig?: Partial<HumanConfig>;
+    dailySchedule?: string;
+    behaviourNotes?: string;
+  };
+} | null;
+
+function storageKey(npc?: SelectedNpc) {
+  return SAVE_PREFIX + ":" + (npc?.id ?? "default");
+}
+
+function readSavedConfig(npc?: SelectedNpc): SavedCharacter | undefined {
   try {
-    const value = localStorage.getItem(SAVE_KEY);
+    const value = localStorage.getItem(storageKey(npc));
     return value ? JSON.parse(value) as SavedCharacter : undefined;
   } catch {
     return undefined;
   }
 }
 
-export default function HumanForgeStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null }) {
-  const [attempt, setAttempt] = useState(0);
-  return <HumanForgeLoader key={`${attempt}-${selectedNpc?.id ?? "default"}`} selectedNpc={selectedNpc} onRetry={() => setAttempt((value) => value + 1)} />;
+function inferHumanConfig(npc?: SelectedNpc): Partial<HumanConfig> {
+  const description = (npc?.appearance?.description ?? "").toLowerCase();
+  const role = (npc?.role ?? "").toLowerCase();
+  const female = /\b(woman|female|girl|lady|mother|nurse|teacher)\b/.test(description + " " + role);
+  const male = /\b(man|male|boy|gentleman|father)\b/.test(description + " " + role);
+  const gender = female ? 0 : male ? 1 : 0.5;
+  const hair = /afro|natural hair|coily/.test(description) ? "afro01"
+    : /braid|plait/.test(description) ? "braid01"
+    : /ponytail/.test(description) ? "ponytail01"
+    : /long hair|long straight/.test(description) ? "long01"
+    : male ? "short02" : "short01";
+  const hairColor = /grey|gray|silver/.test(description) ? "#a8a39c"
+    : /blonde|blond/.test(description) ? "#e6c88a"
+    : /auburn|ginger|copper|red hair/.test(description) ? "#8e3b1f"
+    : /brown hair|brown-haired/.test(description) ? "#6b4428" : "#1a1412";
+  const skin = /ebony|very dark|deep dark/.test(description) ? "young_african_female"
+    : /light skin|fair skin/.test(description) ? "young_caucasian_female"
+    : "young_african_female";
+  const outfit = /uniform|nurse|doctor|medical/.test(description + " " + role)
+    ? (female ? "female_elegantsuit01" : "male_worksuit01")
+    : /suit|formal|executive|office/.test(description)
+      ? (female ? "female_elegantsuit01" : "male_elegantsuit01")
+      : (female ? "female_casualsuit01" : "male_casualsuit01");
+  const color = /white coat|lab coat/.test(description) ? "#e9e2d6"
+    : /red|burgundy/.test(description) ? "#7c2945"
+    : /blue|navy/.test(description) ? "#1f3a5f"
+    : /green/.test(description) ? "#1e6b45" : "#315b50";
+  return {
+    gender,
+    hair,
+    hairColor,
+    skin,
+    clothes: [outfit, "shoes01"],
+    garmentColors: { outfit: color },
+  };
 }
 
-function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null }) {
+export default function HumanForgeStudio({ selectedNpc }: { selectedNpc?: SelectedNpc }) {
+  const [attempt, setAttempt] = useState(0);
+  return <HumanForgeLoader key={`${attempt}-${selectedNpc?.id ?? "default"}`} selectedNpc={selectedNpc} onRetry={() => setAttempt(value => value + 1)} />;
+}
+
+function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selectedNpc?: SelectedNpc }) {
   const { pkg, error } = useHumanPackage(HUMAN_ASSETS, { textureFormat: "webp" });
-  const [saved, setSaved] = useState(() => !!readSavedConfig());
+  const [saved, setSaved] = useState(() => !!readSavedConfig(selectedNpc));
   const [characterName, setCharacterName] = useState(selectedNpc?.name ?? "Amara");
-  const [message, setMessage] = useState("Your edits stay in the editor until you save them.");
+  const [message, setMessage] = useState("Your edits stay in this character's editor until you save them.");
+  const inferredConfig = useMemo(() => inferHumanConfig(selectedNpc), [selectedNpc?.id, selectedNpc?.appearance?.description]);
+  const stored = readSavedConfig(selectedNpc);
+  const storedConfig = stored && "config" in stored ? stored.config : stored;
+  const initialConfig = storedConfig ?? selectedNpc?.appearance?.humanConfig ?? inferredConfig;
 
   const saveCharacter = (config: HumanConfig, _snapshot: string | null) => {
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ config, savedAt: new Date().toISOString() }));
+      localStorage.setItem(storageKey(selectedNpc), JSON.stringify({ config, savedAt: new Date().toISOString() }));
       setSaved(true);
-      setMessage("Character settings saved on this device. You can reopen this editor and continue editing.");
+      setMessage("This NPC's HumanForge 3D configuration is saved on this device.");
     } catch {
       setMessage("This browser could not save the character. Check available device storage and try again.");
     }
@@ -55,21 +114,20 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
     </div>;
   }
 
-  const stored = readSavedConfig();
-  const initialConfig = stored && "config" in stored ? stored.config as Partial<HumanConfig> : stored;
-
   return <div className="nexus-humanforge">
     <div className="nexus-humanforge-heading">
       <div>
         <span className="eyebrow">IN-APP HUMAN CREATOR</span>
         <h3>{selectedNpc ? `Customising ${selectedNpc.name}` : "Realistic Character Workshop"}</h3>
-        <p>Skin tone, eye colour, face details, hair, clothing and accessories — edited directly beside the 3D preview.</p>
+        <p>AI appearance brief is translated into a real HumanForge 3D starting configuration. Edit skin, eyes, face, hair, clothing and accessories below.</p>
       </div>
       <span className="npc-live-pill">HUMANFORGE · CC0 ASSETS</span>
     </div>
-    {selectedNpc && <div className="nexus-selected-npc"><div><span className="eyebrow">SELECTED LIBRARY NPC</span><b>{selectedNpc.role}</b><small>{selectedNpc.personality ?? "Resident"} · {selectedNpc.routine ?? "daily routine"}</small></div><label>Custom NPC name<input value={characterName} onChange={event => setCharacterName(event.target.value)} maxLength={48} placeholder="Enter a character name"/></label></div>}
+    {selectedNpc && <div className="nexus-selected-npc"><div><span className="eyebrow">GENERATED NPC</span><b>{selectedNpc.role}</b><small>{selectedNpc.personality ?? "Resident"} · {selectedNpc.routine ?? "daily routine"}</small></div><label>Custom NPC name<input value={characterName} onChange={event => setCharacterName(event.target.value)} maxLength={48} placeholder="Enter a character name"/></label></div>}
+    {selectedNpc?.appearance?.description && <div className="nexus-humanforge-note"><b>AI appearance brief</b><p>{selectedNpc.appearance.description}</p></div>}
     <div className="nexus-humanforge-editor">
       <HumanEditor
+        key={selectedNpc?.id ?? "sample"}
         pkg={pkg}
         defaultValue={initialConfig}
         options={{
@@ -83,7 +141,7 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
           },
         }}
         onSave={saveCharacter}
-        saveLabel="Save character on this device"
+        saveLabel={selectedNpc ? "Save this NPC's 3D character" : "Save character on this device"}
         randomize={false}
         accentColor="#b58c67"
         background="#d7d2cc"
@@ -91,9 +149,10 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
       />
     </div>
     <div className="nexus-humanforge-footer">
-      <span>{saved ? "A saved character configuration exists on this device." : "No saved character configuration yet."}</span>
-      <span>{message}</span>{selectedNpc && <span>Current custom name: <b>{characterName.trim() || selectedNpc.name}</b>. This is the NPC display name; the 3D model settings are edited below.</span>}
+      <span>{saved ? "A saved HumanForge configuration exists for this character on this device." : "AI starting appearance loaded; save after any edits."}</span>
+      <span>{message}</span>
+      {selectedNpc && <span>Current display name: <b>{characterName.trim() || selectedNpc.name}</b>.</span>}
     </div>
-    <p className="nexus-humanforge-note">The 3D creator and its CC0 character assets are loaded from the HumanForge public CDN. The saved settings currently stay in this browser on this device; project-wide NPC asset saving and GLB export are separate next steps.</p>
+    <p className="nexus-humanforge-note">HumanForge generates the actual rigged 3D human mesh from its CC0 assets. AI chooses a starting look from the available engine options; fine details can be edited here. Saved configurations are currently local to this device, not yet exported as GLB or synced to Cloudflare D1.</p>
   </div>;
 }
