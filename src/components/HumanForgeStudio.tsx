@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { HumanEditor, useHumanPackage } from "humanforge/web";
 import type { HumanConfig } from "humanforge/human";
+import { npcApi } from "../api";
 
 const HUMAN_ASSETS = "https://cdn.jsdelivr.net/gh/abdulrehman043/humanforge@v0.5.0/assets/human";
 const SAVE_PREFIX = "nexus-build-humanforge-character-v2";
@@ -86,11 +87,19 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
   const storedConfig = stored && "config" in stored ? stored.config : stored;
   const initialConfig = storedConfig ?? selectedNpc?.appearance?.humanConfig ?? inferredConfig;
 
-  const saveCharacter = (config: HumanConfig, _snapshot: string | null) => {
+  const saveCharacter = async (config: HumanConfig, _snapshot: string | null) => {
     try {
       localStorage.setItem(storageKey(selectedNpc), JSON.stringify({ config, savedAt: new Date().toISOString() }));
       setSaved(true);
-      setMessage("This NPC's HumanForge 3D configuration is saved on this device.");
+      setMessage("Saved on this device. Syncing to the NEXUS database…");
+      if (selectedNpc?.id) {
+        try {
+          await npcApi.saveCharacter(selectedNpc.id, config as Record<string, unknown>);
+          setMessage("This NPC's 3D configuration is saved locally and synced to the NEXUS database.");
+        } catch (error) {
+          setMessage(error instanceof Error ? "Saved locally; database sync failed: " + error.message : "Saved locally; database sync failed.");
+        }
+      }
     } catch {
       setMessage("This browser could not save the character. Check available device storage and try again.");
     }
