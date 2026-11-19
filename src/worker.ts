@@ -146,7 +146,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
     if(!validateBlueprint(blueprint).length)source="workers-ai";else blueprint=null;
    }
   }catch{}
-  if(!blueprint)blueprint=createFallbackBlueprint(prompt,requested,Boolean(env.AI));
+  if(!blueprint)blueprint=createFallbackBlueprint(prompt,requested,false);
   return json({blueprint,source,aiAvailable:Boolean(env.AI),validated:validateBlueprint(blueprint).length===0});
  }
  if(url.pathname==="/api/tasks"&&request.method==="GET"){
