@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { seededHumanChoice } from "../lib/npcHumanFoundation";
+import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
 
 type Props = { id: string; name: string; index: number };
 
@@ -88,15 +88,13 @@ export default function AraCharacterCard({ id, name, index }: Props) {
       void loadAraEngine().then(() => {
         if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
         const character = document.createElement("ara-character");
-        const presets = ["The Female Executive", "The Adventurer", "The Detective", "The Athlete"];
-        const outfit = ["#6685a8", "#a66d69", "#668b75", "#b18a57", "#8675a8", "#5f9294", "#9a718f", "#8a795f"];
-        const shoes = ["#29252b", "#343c4c", "#4b3d35", "#293c38"];
-        character.setAttribute("preset", seededHumanChoice(id + "-preset", presets));
+        const appearance = getAraCharacterAppearance(id);
+        character.setAttribute("preset", appearance.preset);
         character.setAttribute("animation", "idle");
         character.setAttribute("expression", "neutral");
         character.setAttribute("detail", "low");
         character.setAttribute("background", "#24232c");
-        character.setAttribute("colors", `outfit: ${seededHumanChoice(id + "-outfit", outfit)}; shoes: ${seededHumanChoice(id + "-shoes", shoes)}; carry: #8a6549`);
+        character.setAttribute("colors", `outfit: ${appearance.outfit}; shoes: ${appearance.shoes}; carry: ${appearance.carry}`);
         character.setAttribute("auto-rotate", "");
         character.style.display = "block";
         character.style.width = "100%";
