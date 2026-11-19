@@ -60,7 +60,7 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
       {categories.map(item => <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}<span>{counts[item]}</span></button>)}
     </div>
     <div className="population-index-heading"><div><b>{category === "All" ? "All residents" : category}</b><small>Sorted by generated index · Real Ara 3D character previews · Select to customise</small></div><span>SHOWING {visibleNpcs.length.toLocaleString()} / {filtered.length.toLocaleString()}</span></div>
-    {filtered.length ? <div className="population-card-grid">
+    {filtered.length ? <div className="population-card-grid" ref={gridRef}>
       {visibleNpcs.map((npc, index) => <article className="population-card" key={npc.id}>
         <div className="population-preview-box" style={{"--avatar-hue": (index * 47 + 24) % 360} as React.CSSProperties}>
           <div className="population-preview-glow" />
