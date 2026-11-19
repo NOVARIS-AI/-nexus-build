@@ -46,7 +46,13 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
     const node = host.current;
     if (!node || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
     const observer = new IntersectionObserver(entries => {
-      setVisible(entries.some(entry => entry.isIntersecting));
+      const isVisible = entries.some(entry => entry.isIntersecting);
+      setVisible(isVisible);
+      // Require a fresh tap after leaving the viewport; never silently recreate WebGL.
+      if (!isVisible) {
+        setPreviewRequested(false);
+        setStatus("Tap to load the 3D preview");
+      }
     }, { rootMargin: "0px" });
     observer.observe(node);
     return () => observer.disconnect();
