@@ -64,3 +64,20 @@ npm run preview
 ## Cost and capability notes
 
 The project targets open-source tools and free tiers. Free tiers have limits and can change. Unlimited hosted AI generation, cloud builds and hosting cannot be promised at a zero budget. Heavy local 3D processing may require a computer; the mobile-friendly web studio is being built first.
+
+## Project account isolation
+
+Saved project endpoints require a verified Cloudflare Access identity. The Worker validates the `Cf-Access-Jwt-Assertion` signature, issuer, audience, expiry, and subject, then filters every project read, update, and delete by that subject.
+
+### One-time Cloudflare setup
+
+1. In Cloudflare, open **Workers & Pages → nexus-build → Settings → Domains & Routes**.
+2. Enable **Cloudflare Access** for the production `workers.dev` URL and choose an allow policy for the intended account(s).
+3. Open **Manage Cloudflare Access** and copy the application's **AUD tag**.
+4. In **Workers & Pages → nexus-build → Settings → Variables and Secrets**, add `ACCESS_TEAM_DOMAIN` as a text variable containing the Zero Trust team domain (for example, `your-team.cloudflareaccess.com`, without `https://`).
+5. Add `ACCESS_AUD` as a secret containing the application's AUD tag.
+6. Redeploy the Worker after saving the variables.
+
+Until both variables are configured and Access is enabled, project endpoints deliberately fail closed (503/401) rather than exposing shared projects. Existing rows are retained with the `legacy-unassigned` owner and are not visible to signed-in users until a deliberate ownership-recovery step is implemented.
+
+Do not expose the AUD secret in client-side code or commit it to Git.
