@@ -34,5 +34,6 @@ export type NpcCatalogueResponse={npcs:NpcProfile[];total:number;limit:number;of
 export type GeneratedNpcResponse={npc:NpcProfile;source:string;saved:boolean};
 export const npcApi={
  list:async(limit=24,offset=0,query="",category="All",mode:"search"|"describe"="search"):Promise<NpcCatalogueResponse>=>{const params=new URLSearchParams({limit:String(limit),offset:String(offset)});if(query.trim())params.set("q",query.trim());if(category!=="All")params.set("category",category);if(mode==="describe")params.set("mode","describe");const response=await fetch("/api/npcs?"+params.toString());const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error??"NPC catalogue request failed ("+response.status+")");return data as NpcCatalogueResponse;},
- generate:async(description:string,category="All"):Promise<GeneratedNpcResponse>=>request<GeneratedNpcResponse>("/api/npcs/generate",{method:"POST",body:JSON.stringify({description,category})})
+ generate:async(description:string,category="All"):Promise<GeneratedNpcResponse>=>request<GeneratedNpcResponse>("/api/npcs/generate",{method:"POST",body:JSON.stringify({description,category})}),
+ saveCharacter:async(id:string,config:Record<string,unknown>)=>request<{saved:boolean;id:string}>("/api/npcs/"+encodeURIComponent(id)+"/character",{method:"PUT",body:JSON.stringify({config})})
 };
