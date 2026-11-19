@@ -98,8 +98,7 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
         if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
         const character = document.createElement("ara-character");
         const characterAppearance = { ...getAraCharacterAppearance(id), ...(appearance ?? {}) };
-        // Ara's seeded random input builds a stable, distinct resident instead of
-        // cycling the same small set of preset meshes across the whole catalogue.
+        // A stable seed gives each catalogue resident a repeatable procedural appearance.
         character.setAttribute("random", String(stableCharacterSeed(id)));
         character.setAttribute("animation", "idle");
         character.setAttribute("expression", "neutral");
@@ -120,7 +119,9 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
         }, { once: true });
         character.addEventListener("error", (event) => {
           window.clearTimeout(timeout);
-          const detail = (event as CustomEvent<{ message?: string }>).detail;
+          const detail = event instanceof CustomEvent
+            ? event.detail as { message?: string } | undefined
+            : undefined;
           setStatus(detail?.message ? `3D model error: ${detail.message}` : "3D character data unavailable · check connection");
           if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, { once: true });
