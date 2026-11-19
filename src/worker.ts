@@ -62,6 +62,25 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    return json({error:message.includes("AI")||message.includes("binding")?"AI character generation is not available on this Worker yet. Check the Workers AI binding in Cloudflare and try again.":message},503);
   }
  }
+ const characterMatch=url.pathname.match(/^\/api\/npcs\/([a-zA-Z0-9_-]+)\/character$/);
+ if(characterMatch&&request.method==="PUT"){
+  try{
+   const id=decodeURIComponent(characterMatch[1]);
+   let body:{config?:unknown};
+   try{body=await request.json();}catch{return json({error:"Send a valid character configuration."},400);}
+   if(!body.config||typeof body.config!=="object"||Array.isArray(body.config))return json({error:"A valid HumanForge character configuration is required."},400);
+   const encoded=JSON.stringify(body.config);
+   if(encoded.length>60000)return json({error:"Character configuration is too large to save."},413);
+   const existing=await env.DB.prepare("SELECT appearance_json FROM npc_profiles WHERE id=?").bind(id).first<{appearance_json:string}>();
+   if(!existing)return json({error:"NPC profile not found."},404);
+   let appearance:Record<string,unknown>={};
+   try{const parsed=JSON.parse(existing.appearance_json||"{}");if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))appearance=parsed;}catch{}
+   appearance.humanConfig=body.config;
+   appearance.humanConfigUpdatedAt=now();
+   await env.DB.prepare("UPDATE npc_profiles SET appearance_json=? WHERE id=?").bind(JSON.stringify(appearance),id).run();
+   return json({saved:true,id});
+  }catch(error){return json({error:error instanceof Error?error.message:"Could not save this character."},500);}
+ }
  if(url.pathname==="/api/npcs"&&request.method==="GET"){
   try{
    await ensureNpcCatalogue(env.DB);
