@@ -68,7 +68,7 @@ export default function App() {
     </section>;
     if (page === "projects") return <ProjectManager prompt={prompt} onLoadPrompt={value => { setPrompt(value); setPage("director"); }} onSelectProject={setCurrentProject}/>;
     if (page === "world") return <SceneEditor project={currentProject} onProjectUpdated={setCurrentProject}/>;
-    if (page === "npcs") return <NPCLibrary selectedNpc={selectedNpc}/>;
+    if (page === "npcs") return <NPCLibrary selectedNpc={selectedNpc} onBack={() => setPage("library")}/>;
     if (page === "library") return <PopulationLibrary onPreview={npc => { setSelectedNpc(npc); setPage("npcs"); }}/>;
     if (page === "gameplay") return <GameplayStudio project={currentProject} onProjectUpdated={setCurrentProject}/>;
     return <ToolchainStudio/>;
