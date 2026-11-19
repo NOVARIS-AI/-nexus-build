@@ -137,7 +137,8 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
     };
   }, [visible, id, name, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
 
-  return <div className="ara-npc-preview" ref={host}>
+  return <div className="ara-npc-preview">
+    <div className="ara-npc-canvas-host" ref={host} aria-label={name + " 3D preview"} />
     {!visible && <span className="ara-npc-placeholder">3D character loads on scroll</span>}
     {visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <span className="ara-npc-status">{status}</span>}
     <span className="ara-npc-index">{String(index + 1).padStart(4, "0")}</span>
