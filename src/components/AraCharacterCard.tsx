@@ -96,6 +96,7 @@ export default function AraCharacterCard({ id, name, index }: Props) {
         character.setAttribute("background", "#24232c");
         character.setAttribute("colors", `outfit: ${appearance.outfit}; shoes: ${appearance.shoes}; carry: ${appearance.carry}`);
         character.setAttribute("auto-rotate", "");
+        character.setAttribute("zoom", "");
         character.style.display = "block";
         character.style.width = "100%";
         character.style.height = "100%";
