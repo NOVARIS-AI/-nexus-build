@@ -84,3 +84,43 @@ export function loadAraEngine(): Promise<void> {
 
   return enginePromise;
 }
+
+export type AraEngineDiagnostics = {
+  online: boolean;
+  customElementReady: boolean;
+  scriptState: string;
+  webgl: "available" | "unavailable" | "unknown";
+  userAgent: string;
+};
+
+export function getAraEngineDiagnostics(): AraEngineDiagnostics {
+  let webgl: AraEngineDiagnostics["webgl"] = "unknown";
+  try {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    webgl = context ? "available" : "unavailable";
+    const lose = context && "WEBGL_lose_context" in context
+      ? (context as WebGLRenderingContext).getExtension("WEBGL_lose_context")
+      : null;
+    lose?.loseContext();
+  } catch {
+    webgl = "unavailable";
+  }
+  const script = document.querySelector<HTMLScriptElement>('script[data-ara-embed="true"]');
+  return {
+    online: typeof navigator !== "undefined" ? navigator.onLine : false,
+    customElementReady: typeof customElements !== "undefined" && !!customElements.get("ara-character"),
+    scriptState: script?.dataset.araState ?? (script?.dataset.araLoaded === "true" ? "loaded" : "not-started"),
+    webgl,
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown"
+  };
+}
+
+export function formatAraDiagnosticSummary(): string {
+  const diagnostic = getAraEngineDiagnostics();
+  return [
+    diagnostic.online ? "network: online" : "network: offline",
+    `engine: ${diagnostic.customElementReady ? "registered" : diagnostic.scriptState}`,
+    `WebGL: ${diagnostic.webgl}`
+  ].join(" · ");
+}
