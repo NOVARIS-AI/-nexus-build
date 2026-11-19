@@ -30,7 +30,15 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  const url=new URL(request.url);
  if(!url.pathname.startsWith("/api/"))return env.ASSETS.fetch(request);
  if(request.method==="OPTIONS")return new Response(null,{status:204});
- if(url.pathname==="/api/health"&&request.method==="GET")return json({ok:true,service:"nexus-build-api",database:"bound",timestamp:now()});
+ if(url.pathname==="/api/health"&&request.method==="GET"){
+  try{
+   const probe=await env.DB.prepare("SELECT 1 AS ok").first<{ok:number}>();
+   if(probe?.ok!==1)throw new Error("Database readiness probe returned no result.");
+   return json({ok:true,service:"nexus-build-api",database:"bound",databaseReady:true,aiAvailable:Boolean(env.AI),staticAssetsBound:Boolean(env.ASSETS),timestamp:now()});
+  }catch{
+   return json({ok:false,service:"nexus-build-api",database:"unavailable",databaseReady:false,aiAvailable:Boolean(env.AI),staticAssetsBound:Boolean(env.ASSETS),timestamp:now()},503);
+  }
+ }
 
  if(url.pathname==="/api/npcs/generate"&&request.method==="POST"){
   try{

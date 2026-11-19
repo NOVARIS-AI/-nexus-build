@@ -20,7 +20,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const projectApi = {
-  health: () => request<{ ok: boolean; service: string; database: string }>("/api/health"),
+  health: () => request<{ ok: boolean; service: string; database: string; databaseReady: boolean; aiAvailable: boolean; staticAssetsBound: boolean }>("/api/health"),
   list: async () => (await request<{ projects: Project[] }>("/api/projects")).projects,
   create: async (input: { name: string; description?: string; prompt?: string; scene_json?: string }) =>
     (await request<{ project: Project }>("/api/projects", { method: "POST", body: JSON.stringify(input) })).project,

@@ -13,7 +13,7 @@ export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }
   const refresh = useCallback(async () => {
     try {
       const [health, items] = await Promise.all([projectApi.health(), projectApi.list()]);
-      setConnected(health.ok && health.database === "bound");
+      setConnected(health.ok && health.databaseReady);
       setProjects(items);
     } catch {
       setConnected(false);
