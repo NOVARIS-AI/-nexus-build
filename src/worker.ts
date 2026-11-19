@@ -125,8 +125,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   }catch(error){return json({error:error instanceof Error?error.message:"NPC catalogue unavailable."},503);}
  }
  if(url.pathname==="/api/projects"&&request.method==="GET"){
-  const result=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects ORDER BY updated_at DESC").all();
-  return json({projects:result.results??[]});
+  try{
+   const result=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects ORDER BY updated_at DESC").all();
+   return json({projects:result.results??[]});
+  }catch{return json({error:"Could not load projects right now. Please try again."},503);}
  }
  if(url.pathname==="/api/projects"&&request.method==="POST"){
   let body:{name?:string;description?:string;prompt?:string;scene_json?:string};
@@ -145,8 +147,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  }
  const match=url.pathname.match(new RegExp("^/api/projects/([a-f0-9-]+)$","i"));
  if(match&&request.method==="GET"){
-  const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ?").bind(match[1]).first();
-  return project?json({project}):json({error:"Project not found."},404);
+  try{
+   const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ?").bind(match[1]).first();
+   return project?json({project}):json({error:"Project not found."},404);
+  }catch{return json({error:"Could not load this project right now. Please try again."},503);}
  }
  if(match&&request.method==="PATCH"){
   let body:{name?:string;description?:string;prompt?:string;status?:string;scene_json?:string};
@@ -163,7 +167,11 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   }catch{return json({error:"Could not update the project. Please try again."},503);}
  }
  if(match&&request.method==="DELETE"){
-  const result=await env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(match[1]).run();if(!result.meta?.changes)return json({error:"Project not found."},404);return json({deleted:true,id:match[1]});
+  try{
+   const result=await env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(match[1]).run();
+   if(!result.meta?.changes)return json({error:"Project not found."},404);
+   return json({deleted:true,id:match[1]});
+  }catch{return json({error:"Could not delete this project right now. Please try again."},503);}
  }
  return json({error:"API route not found."},404);
 }};
