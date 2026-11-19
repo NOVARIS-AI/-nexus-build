@@ -30,7 +30,8 @@ function releaseSlot() {
 function stableCharacterSeed(id: string) {
   let hash = 2166136261;
   for (let i = 0; i < id.length; i++) hash = Math.imul(hash ^ id.charCodeAt(i), 16777619);
-  return (hash >>> 0) || 1;
+  // Ara accepts whole-number seeds from 0 through 1,000,000,000 only.
+  return (hash >>> 0) % 1_000_000_001;
 }
 
 export default function AraCharacterCard({ id, name, index, appearance }: Props) {
@@ -63,7 +64,7 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
         if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
         const character = document.createElement("ara-character");
         const characterAppearance = { ...getAraCharacterAppearance(id), ...(appearance ?? {}) };
-        // A stable seed gives each catalogue resident a repeatable procedural appearance.
+        // A stable, in-range seed gives each catalogue resident a repeatable procedural appearance.
         character.setAttribute("random", String(stableCharacterSeed(id)));
         character.setAttribute("animation", "idle");
         character.setAttribute("expression", "neutral");
