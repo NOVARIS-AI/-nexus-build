@@ -86,7 +86,7 @@ export default function AraCharacterCard({ id, name, index }: Props) {
       hasSlot = true;
       setStatus("Loading real 3D character…");
       void loadAraEngine().then(() => {
-        if (cancelled || !host.current) { releaseSlot(); hasSlot = false; return; }
+        if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
         const character = document.createElement("ara-character");
         const presets = ["The Female Executive", "The Adventurer", "The Detective", "The Athlete"];
         const outfit = ["#6685a8", "#a66d69", "#668b75", "#b18a57", "#8675a8", "#5f9294", "#9a718f", "#8a795f"];
