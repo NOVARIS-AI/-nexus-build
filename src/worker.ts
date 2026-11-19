@@ -313,7 +313,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   if(!validJsonText(scene,262144))return json({error:"Scene data must be valid JSON and no larger than 256 KB."},400);
   try{
    const id=crypto.randomUUID(),timestamp=now(),description=body.description?.trim()??"",prompt=body.prompt?.trim()??"";
-   await env.DB.prepare("INSERT INTO projects (id,name,description,prompt,status,scene_json,created_at,updated_at) VALUES (?,?,?,?,'draft',?,?,?)").bind(id,name,description,prompt,scene,timestamp,timestamp).run();
+   await env.DB.prepare("INSERT INTO projects (id,owner_id,name,description,prompt,status,scene_json,created_at,updated_at) VALUES (?,?,?,?,?,'draft',?,?,?)").bind(id,projectOwner,name,description,prompt,scene,timestamp,timestamp).run();
    return json({project:{id,name,description,prompt,status:"draft",scene_json:scene,created_at:timestamp,updated_at:timestamp}},201);
   }catch{return json({error:"Could not save the project. Please try again."},503);}
  }
