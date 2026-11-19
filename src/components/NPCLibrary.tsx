@@ -93,7 +93,7 @@ function validAraShare(value: string) {
   }
 }
 
-function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string } } | null }) {
+function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; humanConfig?: Record<string, unknown>; dailySchedule?: string; behaviourNotes?: string } } | null }) {
   const characterDefaults: CharacterSettings = selectedNpc
     ? { ...DEFAULTS, ...getAraCharacterAppearance(selectedNpc.id), ...(selectedNpc.appearance ?? {}), expression: "neutral" }
     : DEFAULTS;
@@ -262,14 +262,14 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
     <div className="npc-library-note npc-library-note-wide">
       <div className="npc-note-icon">✦</div>
       <b>Growing the NPC catalogue</b>
-      <p>The resident index now contains 1,200+ profiles with streamed Ara 3D previews. Each selected resident opens in the Ara studio with the same deterministic starter preset and colour profile; the gallery limits concurrent 3D previews to protect mobile performance.</p>
+      <p>The resident index now contains 1,200+ profiles with streamed Ara 3D previews. Each generated resident opens in the in-app HumanForge 3D creator with an AI-selected starting appearance; Ara remains available as an alternate preview engine.</p>
     </div>
   </section>;
 }
 
 
 export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string } } | null; onBack?: () => void }) {
-  const [studio, setStudio] = useState<"humanforge" | "ara">(selectedNpc ? "ara" : "humanforge");
+  const [studio, setStudio] = useState<"humanforge" | "ara">("humanforge");
   return <section className="npc-library-shell">
     {selectedNpc && <button type="button" className="npc-library-back" onClick={onBack}>← Back to NPC Library</button>}
     <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
