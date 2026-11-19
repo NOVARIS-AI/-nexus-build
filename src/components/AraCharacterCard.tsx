@@ -3,42 +3,7 @@ import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
 
 type Props = { id: string; name: string; index: number; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string } };
 
-let enginePromise: Promise<void> | null = null;
-function loadAraEngine(): Promise<void> {
-  if (customElements.get("ara-character")) return Promise.resolve();
-  if (enginePromise) return enginePromise;
-  enginePromise = new Promise<void>((resolve, reject) => {
-    let script = document.querySelector<HTMLScriptElement>('script[data-ara-embed="true"]');
-    const ready = () => {
-      const timeout = window.setTimeout(() => reject(new Error("Ara 3D engine timed out.")), 15000);
-      customElements.whenDefined("ara-character").then(() => {
-        window.clearTimeout(timeout);
-        resolve();
-      }, reject);
-    };
-    if (script) {
-      if (customElements.get("ara-character") || script.dataset.araLoaded === "true") ready();
-      else {
-        script.addEventListener("load", ready, { once: true });
-        script.addEventListener("error", () => reject(new Error("Ara 3D engine could not load.")), { once: true });
-      }
-      return;
-    }
-    const hint = document.createElement("link");
-    hint.rel = "preconnect";
-    hint.href = "https://cdn.jsdelivr.net";
-    hint.crossOrigin = "anonymous";
-    document.head.appendChild(hint);
-    script = document.createElement("script");
-    script.type = "module";
-    script.src = "https://cdn.jsdelivr.net/npm/ara3d@0.9.0/dist/embed.js";
-    script.dataset.araEmbed = "true";
-    script.addEventListener("load", () => { script!.dataset.araLoaded = "true"; ready(); }, { once: true });
-    script.addEventListener("error", () => reject(new Error("Ara 3D engine could not load.")), { once: true });
-    document.head.appendChild(script);
-  }).catch(error => { enginePromise = null; throw error; });
-  return enginePromise;
-}
+import { loadAraEngine } from "../lib/araEngine";
 
 export function preloadAraEngine() { void loadAraEngine().catch(() => undefined); }
 
