@@ -4,9 +4,10 @@ import SceneEditor from "./components/SceneEditor";
 import ToolchainStudio from "./components/ToolchainStudio";
 import GameplayStudio from "./components/GameplayStudio";
 import NPCLibrary from "./components/NPCLibrary";
+import PopulationLibrary from "./components/PopulationLibrary";
 import type { Project } from "./api";
 
-type Page = "home" | "director" | "projects" | "world" | "npcs" | "gameplay" | "tools";
+type Page = "home" | "director" | "projects" | "world" | "npcs" | "library" | "gameplay" | "tools";
 
 const navigation: { id: Page; label: string; icon: string; group: string }[] = [
   { id: "home", label: "Overview", icon: "⌂", group: "WORKSPACE" },
@@ -14,6 +15,7 @@ const navigation: { id: Page; label: string; icon: string; group: string }[] = [
   { id: "projects", label: "My Projects", icon: "▦", group: "WORKSPACE" },
   { id: "world", label: "World Editor", icon: "◇", group: "CREATE" },
   { id: "npcs", label: "NPC Studio", icon: "♙", group: "CREATE" },
+  { id: "library", label: "NPC Library", icon: "▤", group: "CREATE" },
   { id: "gameplay", label: "Gameplay", icon: "▶", group: "CREATE" },
   { id: "tools", label: "Toolchain", icon: "⌘", group: "CREATE" },
 ];
@@ -23,7 +25,8 @@ const pageMeta: Record<Page, { title: string; subtitle: string; eyebrow: string 
   director: { title: "AI Game Director", subtitle: "Describe the experience you want to create and shape its game plan.", eyebrow: "IDEA TO GAME PLAN" },
   projects: { title: "Your projects", subtitle: "Create, reopen and manage your saved game projects.", eyebrow: "PROJECT WORKSPACE" },
   world: { title: "World Editor", subtitle: "Build your environment, place objects and shape the world in 3D.", eyebrow: "SCENE DESIGN" },
-  npcs: { title: "NPC Studio", subtitle: "Create, customise, import and organise the people who inhabit your worlds.", eyebrow: "CHARACTER WORKSHOP" },
+  npcs: { title: "NPC Studio", subtitle: "Create, customise and import reusable characters for your game worlds.", eyebrow: "CHARACTER WORKSHOP" },
+  library: { title: "NPC Library", subtitle: "Browse the full resident index, search by name or role, and filter the catalogue by category.", eyebrow: "CHARACTER INDEX" },
   gameplay: { title: "Gameplay Lab", subtitle: "Playtest your world, tune missions and manage resident behaviour.", eyebrow: "RUNTIME & SIMULATION" },
   tools: { title: "Production Toolchain", subtitle: "Manage assets, scripts, visual logic and connected creator tools.", eyebrow: "CREATOR UTILITIES" },
 };
@@ -64,6 +67,7 @@ export default function App() {
     if (page === "projects") return <ProjectManager prompt={prompt} onLoadPrompt={value => { setPrompt(value); setPage("director"); }} onSelectProject={setCurrentProject}/>;
     if (page === "world") return <SceneEditor project={currentProject} onProjectUpdated={setCurrentProject}/>;
     if (page === "npcs") return <NPCLibrary/>;
+    if (page === "library") return <PopulationLibrary/>;
     if (page === "gameplay") return <GameplayStudio project={currentProject} onProjectUpdated={setCurrentProject}/>;
     return <ToolchainStudio/>;
   };
