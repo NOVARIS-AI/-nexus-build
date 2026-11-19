@@ -26,6 +26,8 @@ async function ensureNpcCatalogue(db:D1Database){
 }
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const now=()=>new Date().toISOString();
+const validJsonText=(value:unknown,max:number):value is string=>typeof value==="string"&&value.length<=max&&(()=>{try{JSON.parse(value);return true;}catch{return false;}})();
+const optionalText=(value:unknown,max:number)=>value===undefined||typeof value==="string"&&value.length<=max;
 export default { async fetch(request:Request,env:Env):Promise<Response>{
  const url=new URL(request.url);
  if(!url.pathname.startsWith("/api/"))return env.ASSETS.fetch(request);
@@ -129,10 +131,17 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(url.pathname==="/api/projects"&&request.method==="POST"){
   let body:{name?:string;description?:string;prompt?:string;scene_json?:string};
   try{body=await request.json();}catch{return json({error:"Request body must be valid JSON."},400);}
-  const name=body.name?.trim();if(!name)return json({error:"Project name is required."},400);
-  const id=crypto.randomUUID(),timestamp=now();
-  await env.DB.prepare("INSERT INTO projects (id,name,description,prompt,status,scene_json,created_at,updated_at) VALUES (?,?,?,?,'draft',?,?,?)").bind(id,name,body.description?.trim()??"",body.prompt?.trim()??"",body.scene_json??"{}",timestamp,timestamp).run();
-  return json({project:{id,name,description:body.description?.trim()??"",prompt:body.prompt?.trim()??"",status:"draft",scene_json:body.scene_json??"{}",created_at:timestamp,updated_at:timestamp}},201);
+  if(!body||typeof body!=="object"||Array.isArray(body))return json({error:"A project object is required."},400);
+  const name=body.name?.trim();
+  if(!name)return json({error:"Project name is required."},400);
+  if(name.length>100||!optionalText(body.description,2000)||!optionalText(body.prompt,12000))return json({error:"Project name, description or prompt exceeds the allowed length."},400);
+  const scene=body.scene_json??"{}";
+  if(!validJsonText(scene,262144))return json({error:"Scene data must be valid JSON and no larger than 256 KB."},400);
+  try{
+   const id=crypto.randomUUID(),timestamp=now(),description=body.description?.trim()??"",prompt=body.prompt?.trim()??"";
+   await env.DB.prepare("INSERT INTO projects (id,name,description,prompt,status,scene_json,created_at,updated_at) VALUES (?,?,?,?,'draft',?,?,?)").bind(id,name,description,prompt,scene,timestamp,timestamp).run();
+   return json({project:{id,name,description,prompt,status:"draft",scene_json:scene,created_at:timestamp,updated_at:timestamp}},201);
+  }catch{return json({error:"Could not save the project. Please try again."},503);}
  }
  const match=url.pathname.match(new RegExp("^/api/projects/([a-f0-9-]+)$","i"));
  if(match&&request.method==="GET"){
@@ -142,10 +151,16 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(match&&request.method==="PATCH"){
   let body:{name?:string;description?:string;prompt?:string;status?:string;scene_json?:string};
   try{body=await request.json();}catch{return json({error:"Request body must be valid JSON."},400);}
+  if(!body||typeof body!=="object"||Array.isArray(body))return json({error:"A project update object is required."},400);
+  if(body.name!==undefined&&(typeof body.name!=="string"||!body.name.trim()||body.name.trim().length>100))return json({error:"Project name must contain 1–100 characters."},400);
+  if(!optionalText(body.description,2000)||!optionalText(body.prompt,12000))return json({error:"Project description or prompt exceeds the allowed length."},400);
+  if(body.scene_json!==undefined&&!validJsonText(body.scene_json,262144))return json({error:"Scene data must be valid JSON and no larger than 256 KB."},400);
   const existing=await env.DB.prepare("SELECT id FROM projects WHERE id = ?").bind(match[1]).first();if(!existing)return json({error:"Project not found."},404);
-  const allowed=["draft","planning","prototype","archived"];if(body.status&&!allowed.includes(body.status))return json({error:"Invalid project status."},400);
-  await env.DB.prepare("UPDATE projects SET name=COALESCE(?,name),description=COALESCE(?,description),prompt=COALESCE(?,prompt),status=COALESCE(?,status),scene_json=COALESCE(?,scene_json),updated_at=? WHERE id=?").bind(body.name?.trim()||null,body.description??null,body.prompt??null,body.status??null,body.scene_json??null,now(),match[1]).run();
-  const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ?").bind(match[1]).first();return json({project});
+  const allowed=["draft","planning","prototype","archived"];if(body.status!==undefined&&!allowed.includes(body.status))return json({error:"Invalid project status."},400);
+  try{
+   await env.DB.prepare("UPDATE projects SET name=COALESCE(?,name),description=COALESCE(?,description),prompt=COALESCE(?,prompt),status=COALESCE(?,status),scene_json=COALESCE(?,scene_json),updated_at=? WHERE id=?").bind(body.name?.trim()??null,body.description??null,body.prompt??null,body.status??null,body.scene_json??null,now(),match[1]).run();
+   const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ?").bind(match[1]).first();return project?json({project}):json({error:"Project could not be loaded after updating."},503);
+  }catch{return json({error:"Could not update the project. Please try again."},503);}
  }
  if(match&&request.method==="DELETE"){
   const result=await env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(match[1]).run();if(!result.meta?.changes)return json({error:"Project not found."},404);return json({deleted:true,id:match[1]});
