@@ -552,3 +552,15 @@
 
 .population-describe-panel .population-describe-submit:disabled{opacity:.55;cursor:wait}
 .population-describe-panel .population-db-warning{font-size:12px;line-height:1.5}
+
+
+/* HumanForge GLB export panel */
+.nexus-humanforge-export{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,360px);grid-template-rows:auto auto 1fr;align-items:start;gap:12px;margin-top:14px;padding:14px;border:1px solid #48414b;border-radius:11px;background:linear-gradient(145deg,#29232a,#1b1920)}
+.nexus-humanforge-export>div:first-child{grid-column:1;grid-row:1}
+.nexus-humanforge-export>div:first-child>b{display:block;color:#f1e9f1;font:600 13px 'Space Grotesk'}
+.nexus-humanforge-export>div:first-child>p{margin:5px 0 0;color:#a39aa7;font-size:9px;line-height:1.6}
+.nexus-humanforge-export-preview{grid-column:2;grid-row:1 / span 3;min-width:0;overflow:hidden;border:1px solid #514a53;border-radius:9px;background:#d7d2cc}
+.nexus-humanforge-export-button{grid-column:1;grid-row:2;justify-self:start;border:1px solid #c29b72;border-radius:8px;padding:10px 15px;background:linear-gradient(135deg,#c49a70,#9e744e);color:#211811;font:700 11px 'DM Sans';cursor:pointer}
+.nexus-humanforge-export-button:disabled{opacity:.55;cursor:wait}
+.nexus-humanforge-export>small{grid-column:1;grid-row:3;color:#c9b08f;font-size:9px;line-height:1.5}
+@media(max-width:700px){.nexus-humanforge-export{display:flex;flex-direction:column;align-items:stretch}.nexus-humanforge-export-preview{width:100%}.nexus-humanforge-export-button{align-self:flex-start}}
