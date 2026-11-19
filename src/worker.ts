@@ -1,4 +1,5 @@
 import { createFallbackBlueprint, chooseEngine, chooseProcessingMode, validateBlueprint, type EngineId, type GameBlueprint } from "./lib/nexusCore";
+import { createFallbackWorld, sanitizeWorldObjects, validateWorldPlan, type WorldBiome } from "./lib/worldGeneration";
 interface D1Result<T = Record<string, unknown>> { results?: T[]; success: boolean; meta?: { changes?: number }; }
 interface D1Statement { bind(...values: unknown[]): D1Statement; first<T = Record<string, unknown>>(): Promise<T | null>; all<T = Record<string, unknown>>(): Promise<D1Result<T>>; run(): Promise<D1Result>; }
 interface D1Database { prepare(query: string): D1Statement; batch(statements: D1Statement[]): Promise<D1Result[]>; }
@@ -124,6 +125,33 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const total=count?.total??0,loaded=rows.results?.length??0;
    return json({npcs:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1",searchMode:describe?"description-match":ftsQuery?"fts5":"catalogue"});
   }catch(error){return json({error:error instanceof Error?error.message:"NPC catalogue unavailable."},503);}
+ }
+ if(url.pathname==="/api/world/generate"&&request.method==="POST"){
+  let body:{prompt?:string;biome?:WorldBiome;size?:"compact"|"standard"|"large"};
+  try{body=await request.json();}catch{return json({error:"Send a valid world description."},400);}
+  const prompt=(body.prompt??"").trim().slice(0,1800),biome=(body.biome??"city") as WorldBiome,size=body.size??"standard";
+  if(prompt.length<12)return json({error:"Please describe the world in at least 12 characters."},400);
+  if(!["city","village","fantasy","forest","desert","sci-fi"].includes(biome)||!["compact","standard","large"].includes(size))return json({error:"Choose a supported environment and world size."},400);
+  const taskId=crypto.randomUUID(),stamp=now();
+  try{await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?, 'running',?,?,?,?)").bind(taskId,"world-scene",prompt,"three",stamp,stamp).run();}
+  catch{return json({error:"Could not create a world-generation task. Check the generation task migration."},503);}
+  let world=createFallbackWorld(prompt,biome,size),source="procedural-fallback";
+  try{
+   const instruction="Design a compact 3D game scene using only the supported primitive object types. Return ONLY JSON: {name,description,lighting,objects:[{name,kind,position:[x,y,z],rotation:[x,y,z],scale:[x,y,z],color}]}. Supported kind values: building, tree, road, car, cube, sphere, cylinder, cone, torus, plane. Create 18 to 45 useful objects with a coherent navigable layout, a clear central play area and sensible spacing. Coordinates must be within -18..18, scales 0.1..8, colours hex #RRGGBB. Keep the central spawn area near [0,0,0] clear. Do not use text or markdown. General-audience game environment only.";
+   const generated=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:instruction},{role:"user",content:"World biome: "+biome+". Size: "+size+". World description: "+prompt}],max_tokens:1800,temperature:.45});
+   const raw=(generated.response??"").trim(),start=raw.indexOf("{"),end=raw.lastIndexOf("}");
+   if(start>=0&&end>start){
+    const parsed=JSON.parse(raw.slice(start,end+1)) as Record<string,unknown>,objects=sanitizeWorldObjects(parsed.objects);
+    if(objects.length>=10){
+     world={...world,name:typeof parsed.name==="string"?parsed.name.slice(0,64):world.name,description:typeof parsed.description==="string"?parsed.description.slice(0,500):world.description,objects,lighting:parsed.lighting==="night"||parsed.lighting==="sunset"?"sunset":"day",generatedAt:now()};
+     if(!validateWorldPlan(world).length)source="workers-ai";
+    }
+   }
+  }catch{}
+  const result=JSON.stringify(world);
+  try{await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(result,now(),taskId).run();}
+  catch{return json({error:"World was generated but its task record could not be saved. Please retry."},503);}
+  return json({world,source,taskId,objectCount:world.objects.length,validated:validateWorldPlan(world).length===0});
  }
  if(url.pathname==="/api/director/plan"&&request.method==="POST"){
   let body:{prompt?:string;engine?:EngineId};
