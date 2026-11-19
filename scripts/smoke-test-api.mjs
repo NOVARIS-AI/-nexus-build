@@ -36,4 +36,26 @@ if (invalidProject.response.status !== 400 || typeof invalidProject.body?.error 
   throw new Error(`Invalid project input was not rejected safely (${invalidProject.response.status}): ${JSON.stringify(invalidProject.body)}`);
 }
 
-console.log("API smoke tests passed: health, D1 readiness, project listing, missing-project handling and input validation.");
+const taskCreate = await readJson("/api/tasks", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ type: "smoke-test", input: "Validate persistent generation task storage.", engine: "auto" }),
+});
+if (taskCreate.response.status !== 201 || taskCreate.body?.task?.status !== "queued" || !taskCreate.body?.task?.id) {
+  throw new Error(`Generation task creation failed (${taskCreate.response.status}): ${JSON.stringify(taskCreate.body)}`);
+}
+const taskId = taskCreate.body.task.id;
+const taskUpdate = await readJson(`/api/tasks/${taskId}`, {
+  method: "PATCH",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ status: "completed", result: { smokeTest: true } }),
+});
+if (!taskUpdate.response.ok || taskUpdate.body?.task?.status !== "completed") {
+  throw new Error(`Generation task update failed (${taskUpdate.response.status}): ${JSON.stringify(taskUpdate.body)}`);
+}
+const taskList = await readJson("/api/tasks?limit=5");
+if (!taskList.response.ok || !Array.isArray(taskList.body?.tasks) || !taskList.body.tasks.some((task) => task.id === taskId && task.result?.smokeTest === true)) {
+  throw new Error(`Generation task listing failed (${taskList.response.status}): ${JSON.stringify(taskList.body)}`);
+}
+
+console.log("API smoke tests passed: health, D1 readiness, projects, input validation and persistent generation tasks.");
