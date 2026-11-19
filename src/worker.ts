@@ -95,6 +95,37 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    return json({error:error instanceof Error?error.message:"AI image generation is temporarily unavailable."},503);
   }
  }
+ if(url.pathname==="/api/assets/generate-3d"&&request.method==="POST"){
+  let taskId="";
+  try{
+   let body:{prompt?:string};
+   try{body=await request.json();}catch{return json({error:"Send a valid 3D asset description."},400);}
+   const prompt=(body.prompt??"").trim().slice(0,1200);
+   if(prompt.length<12)return json({error:"Describe the 3D asset in at least 12 characters."},400);
+   taskId="asset3d-"+crypto.randomUUID();
+   const stamp=now(),input=JSON.stringify({prompt,model:"@cf/meta/llama-3.1-8b-instruct",pipeline:"ai-guided-procedural"});
+   await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").bind(taskId,"asset-3d","running",input,"workers-ai-procedural-mesh",stamp,stamp).run();
+   const instruction="Create a compact 3D game prop from the user's description. Return ONLY JSON with keys name, description, parts. parts must contain 3 to 18 objects. Each object has shape (box, sphere, cylinder, cone, torus), position [x,y,z], scale [x,y,z], color (#RRGGBB), and optional rotation [x,y,z]. Use a coherent low-poly assembly, grounded at y=0, overall dimensions within 6 units. Avoid tiny details. Use varied components to make a recognizable game-ready prop. User description: "+prompt;
+   const generated=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:"You are a technical 3D prop designer. Return strict JSON only. Never include markdown."},{role:"user",content:instruction}],max_tokens:1300,temperature:0.35});
+   const raw=(generated.response??"").trim(),start=raw.indexOf("{"),end=raw.lastIndexOf("}");
+   if(start<0||end<=start)throw new Error("The AI returned an unreadable 3D blueprint. Try a simpler description.");
+   const parsed=JSON.parse(raw.slice(start,end+1)) as {name?:unknown;description?:unknown;parts?:unknown};
+   if(!Array.isArray(parsed.parts)||parsed.parts.length<3)throw new Error("The AI blueprint did not contain enough mesh components.");
+   const shapes=["box","sphere","cylinder","cone","torus"];
+   const parts=parsed.parts.slice(0,18).map((part:unknown)=>{
+    const p=part as Record<string,unknown>,vector=(value:unknown,fallback:[number,number,number],min:number,max:number):[number,number,number]=>Array.isArray(value)&&value.length===3?value.map(v=>Math.max(min,Math.min(max,Number.isFinite(Number(v))?Number(v):0))) as [number,number,number]:fallback;
+    const shape=shapes.includes(String(p.shape))?String(p.shape):"box";
+    const color=typeof p.color==="string"&&/^#[0-9a-fA-F]{6}$/.test(p.color)?p.color:"#9b8068";
+    return {shape,position:vector(p.position,[0,0,0],-3,3),scale:vector(p.scale,[1,1,1],0.08,3),rotation:vector(p.rotation,[0,0,0],-6.28,6.28),color};
+   });
+   const blueprint={name:typeof parsed.name==="string"?parsed.name.slice(0,80):"Generated game prop",description:typeof parsed.description==="string"?parsed.description.slice(0,240):prompt,parts};
+   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(JSON.stringify(blueprint),now(),taskId).run();
+   return json({blueprint,taskId,source:"workers-ai-procedural"},201);
+  }catch(error){
+   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=?").bind(error instanceof Error?error.message:"3D generation failed.",now(),taskId).run();}catch{}}
+   return json({error:error instanceof Error?error.message:"3D asset generation is temporarily unavailable."},503);
+  }
+ }
  if(url.pathname==="/api/npcs/generate"&&request.method==="POST"){
   try{
    let body:{description?:string;category?:string};
