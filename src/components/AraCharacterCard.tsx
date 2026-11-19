@@ -6,10 +6,12 @@ type Props = { id: string; name: string; index: number; appearance?: { preset?: 
 
 export function preloadAraEngine() { void loadAraEngine().catch(() => undefined); }
 
+// A single live Ara/WebGL scene across the whole catalogue. The phone keeps the
+// lightweight NPC cards, but never accumulates dozens of hidden GPU canvases.
 let activeCards = 0;
 const waiting: Array<() => void> = [];
 function pump() {
-  while (activeCards < 3 && waiting.length) {
+  while (activeCards < 1 && waiting.length) {
     activeCards++;
     waiting.shift()?.();
   }
@@ -35,8 +37,6 @@ function stableCharacterSeed(id: string) {
 
 export default function AraCharacterCard({ id, name, index, appearance }: Props) {
   const host = useRef<HTMLDivElement>(null);
-  const cancelCurrent = useRef<(() => void) | null>(null);
-  const startedKey = useRef(-1);
   const [visible, setVisible] = useState(false);
   const [status, setStatus] = useState("3D preview loads when visible");
   const [retryKey, setRetryKey] = useState(0);
@@ -46,43 +46,30 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
     if (!node || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
     const observer = new IntersectionObserver(entries => {
       setVisible(entries.some(entry => entry.isIntersecting));
-    }, { rootMargin: "180px 0px" });
+    }, { rootMargin: "0px" });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
 
-  // Start each preview once when it first enters the viewport. Scrolling away must
-  // not tear down the custom element: Ara can take time to build its model and the
-  // browser should retain the finished WebGL scene when the user scrolls back.
   useEffect(() => {
-    if (!visible || !host.current || startedKey.current === retryKey) return;
-    cancelCurrent.current?.();
-    startedKey.current = retryKey;
-
+    if (!visible || !host.current) return;
     let cancelled = false;
     let element: HTMLElement | null = null;
     let hasSlot = false;
     let timeout = 0;
     let modelReady = false;
-    let slotReleased = false;
+    let released = false;
     const release = () => {
-      if (hasSlot && !slotReleased) {
-        slotReleased = true;
+      if (hasSlot && !released) {
+        released = true;
         hasSlot = false;
         releaseSlot();
       }
     };
-    const cleanup = () => {
-      cancelled = true;
-      cancelQueued();
-      window.clearTimeout(timeout);
-      element?.remove();
-      if (hasSlot) release();
-    };
     const cancelQueued = requestSlot(() => {
       if (cancelled || !host.current) { releaseSlot(); return; }
       hasSlot = true;
-      setStatus("Loading real 3D character…");
+      setStatus("Loading one lightweight 3D preview…");
       void loadAraEngine().then(() => {
         if (cancelled || !host.current) { release(); return; }
         const character = document.createElement("ara-character");
@@ -94,8 +81,6 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
         character.setAttribute("background", "#24232c");
         character.setAttribute("colors", `outfit: ${characterAppearance.outfit}; shoes: ${characterAppearance.shoes}; carry: ${characterAppearance.carry}`);
         character.setAttribute("look-at", "camera");
-        character.setAttribute("auto-rotate", "");
-        character.setAttribute("zoom", "");
         character.style.display = "block";
         character.style.width = "100%";
         character.style.height = "100%";
@@ -104,9 +89,9 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           modelReady = true;
           window.clearTimeout(timeout);
           setStatus("REAL 3D CHARACTER · DRAG TO ROTATE");
-          release();
+          // Keep the single slot while this card is visible; release on scroll-away.
         }, { once: true });
-        character.addEventListener("error", (event) => {
+        character.addEventListener("error", event => {
           window.clearTimeout(timeout);
           const detail = event instanceof CustomEvent ? event.detail as { message?: string } | undefined : undefined;
           setStatus(`${detail?.message ? `3D model error: ${detail.message}` : "3D character data unavailable"} · ${formatAraDiagnosticSummary()}`);
@@ -120,24 +105,23 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           character.remove();
           release();
         }, 30000);
-      }).catch((error) => {
+      }).catch(error => {
         if (!cancelled) setStatus(`${error instanceof Error ? error.message : "Ara 3D engine unavailable"} · ${formatAraDiagnosticSummary()}`);
         release();
       });
     });
-    cancelCurrent.current = cleanup;
-    return undefined;
+    return () => {
+      cancelled = true;
+      cancelQueued();
+      window.clearTimeout(timeout);
+      element?.remove();
+      release();
+    };
   }, [visible, id, name, retryKey, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
-
-  useEffect(() => () => {
-    cancelCurrent.current?.();
-    cancelCurrent.current = null;
-    startedKey.current = -1;
-  }, []);
 
   return <div className="ara-npc-preview">
     <div className="ara-npc-canvas-host" ref={host} aria-label={name + " 3D preview"} />
-    {!visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <span className="ara-npc-placeholder">3D character loads on scroll</span>}
+    {!visible && <span className="ara-npc-placeholder">3D preview loads when visible</span>}
     {visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <><span className="ara-npc-status">{status}</span><button type="button" className="ara-npc-retry" onClick={() => setRetryKey(value => value + 1)}>Retry 3D preview</button></>}
     <span className="ara-npc-index">{String(index + 1).padStart(4, "0")}</span>
   </div>;
