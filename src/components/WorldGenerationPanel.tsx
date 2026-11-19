@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createFallbackWorld, type SceneObject, type WorldBiome } from "../lib/worldGeneration";
-type Props={onGenerate:(objects:SceneObject[],plan:{name:string;biome:WorldBiome;description:string;spawnPoint:[number,number,number];lighting:string})=>void};
+import { createFallbackWorld, type SceneObject, type WorldBiome, type WorldPlan } from "../lib/worldGeneration";
+type Props={onGenerate:(objects:SceneObject[],plan:WorldPlan)=>void};
 const biomes:{id:WorldBiome;label:string;hint:string}[]=[{id:"city",label:"Modern city",hint:"Roads, buildings, street trees and vehicles"},{id:"village",label:"Village",hint:"Homes, green spaces and community streets"},{id:"fantasy",label:"Fantasy realm",hint:"Mystic towers, ancient landmarks and crystals"},{id:"forest",label:"Forest",hint:"Dense woodland and natural clearings"},{id:"desert",label:"Desert",hint:"Sandstone structures and rocky formations"},{id:"sci-fi",label:"Sci-fi colony",hint:"Futuristic structures and energy beacons"}];
 export default function WorldGenerationPanel({onGenerate}:Props){
  const [prompt,setPrompt]=useState("A lively neighbourhood with a central landmark, roads, buildings and green spaces.");
