@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./mobile-navigation.css";
 import ProjectManager from "./components/ProjectManager";
 import SceneEditor from "./components/SceneEditor";
 import ToolchainStudio from "./components/ToolchainStudio";
