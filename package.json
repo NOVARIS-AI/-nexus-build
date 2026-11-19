@@ -16,7 +16,10 @@
     "react-dom": "latest",
     "three": "latest",
     "humanforge": "0.8.1",
-    "@mediapipe/tasks-vision": "1.2.3"
+    "@mediapipe/tasks-vision": "1.2.3",
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1"
   },
   "devDependencies": {
     "@types/react": "latest",
