@@ -514,3 +514,6 @@
 .population-character-art{position:relative;z-index:1;width:100%;height:100%;max-width:180px;display:block;overflow:visible;filter:drop-shadow(0 9px 10px #0007)}
 .population-preview-caption{z-index:2}
 @media(max-width:560px){.population-preview-box{height:174px;min-height:174px}.population-character-art{max-width:145px}}
+
+.npc-library-back{display:inline-flex;align-items:center;gap:7px;margin:0 0 13px;padding:9px 12px;border:1px solid #655143;border-radius:7px;background:#29232a;color:#e9c094;font:600 10px 'DM Sans';cursor:pointer}
+.npc-library-back:hover{background:#3a302b;border-color:#c59a70}
