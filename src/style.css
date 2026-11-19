@@ -482,3 +482,29 @@
 .population-library-foot{margin:12px 0 0;color:#8f8793;font-size:9px;line-height:1.6}
 @media(max-width:900px){.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.population-library-top{align-items:flex-start;padding:14px}.population-library-top h2{font-size:19px}.population-total{min-width:70px}.population-total b{font-size:23px}.population-search-row{align-items:stretch;flex-direction:column;gap:6px}.population-results{text-align:right}.population-index-heading{align-items:flex-start;flex-direction:column}.population-card-grid{grid-template-columns:1fr;max-height:70vh}.population-card-main{padding:11px}}
+
+/* NPC catalogue cards: paired preview tiles and explicit page navigation */
+.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none;overflow:visible;gap:14px}
+.population-card{display:grid;grid-template-columns:minmax(0,1fr);padding:10px;gap:8px}
+.population-preview-box{height:176px;position:relative;overflow:hidden;display:grid;place-items:center;border:1px solid #49414b;border-radius:8px;background:radial-gradient(ellipse at 50% 70%,hsla(var(--avatar-hue),35%,38%,.4),transparent 65%),linear-gradient(145deg,#302a35,#17151c)}
+.population-preview-glow{position:absolute;width:110px;height:110px;border-radius:50%;background:hsla(var(--avatar-hue),50%,60%,.12);filter:blur(24px)}
+.population-preview-person{position:relative;width:74px;height:138px;filter:drop-shadow(0 12px 14px #0008)}
+.population-preview-head{position:absolute;top:3px;left:25px;width:25px;height:29px;border-radius:46% 46% 42% 42%;background:hsl(var(--avatar-hue),25%,69%);box-shadow:inset -5px -2px 0 #0002}
+.population-preview-body{position:absolute;top:34px;left:14px;width:48px;height:58px;border-radius:17px 17px 9px 9px;background:linear-gradient(110deg,hsl(var(--avatar-hue),24%,57%),hsl(var(--avatar-hue),30%,32%))}
+.population-preview-leg{position:absolute;top:88px;width:19px;height:48px;border-radius:5px 5px 8px 8px;background:#34313a}
+.population-preview-leg.left{left:17px}.population-preview-leg.right{right:17px}
+.population-preview-caption{position:absolute;left:10px;bottom:9px;color:#a99cac;font:7px 'DM Mono';letter-spacing:1px}
+.population-card-copy{padding:2px 3px}
+.population-preview-button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 11px;border:1px solid #8e6e51;border-radius:7px;background:#392f2a;color:#efc18f;font:600 9px 'DM Sans';cursor:pointer}
+.population-preview-button:hover{background:#493a30;border-color:#d1a477}
+.nexus-selected-npc{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;padding:13px;border:1px solid #4b403b;border-radius:9px;background:#292321}
+.nexus-selected-npc>div{display:grid;gap:4px}
+.nexus-selected-npc>div>b{color:#eee5e9;font:600 12px 'Space Grotesk'}
+.nexus-selected-npc>div>small{color:#a69aa3;font-size:9px}
+.nexus-selected-npc>label{display:grid;gap:5px;min-width:min(48%,260px);color:#c9b7a9;font-size:9px}
+.nexus-selected-npc input{width:100%;padding:9px;border:1px solid #5a4b47;border-radius:6px;background:#17151a;color:#eee;font:10px 'DM Sans'}
+.sidebar{z-index:40}
+.primary-nav{display:flex;flex-direction:column;visibility:visible;opacity:1}
+.nav{display:flex;visibility:visible;opacity:1}
+@media(max-width:850px){.sidebar{position:sticky;top:0;z-index:40}.primary-nav{display:flex!important;flex-direction:row!important;visibility:visible;opacity:1;overflow-x:auto;flex-wrap:nowrap}.nav{display:flex!important;flex:0 0 auto;visibility:visible;opacity:1}.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none;overflow:visible}}
+@media(max-width:560px){.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.population-preview-box{height:132px}.population-preview-person{transform:scale(.82)}.population-card{padding:7px;gap:6px}.population-card-copy b{font-size:10px}.population-card-copy small{font-size:8px}.population-card-copy em{font-size:7px}.population-preview-button{padding:8px 7px;font-size:8px}.nexus-selected-npc{align-items:stretch;flex-direction:column}.nexus-selected-npc>label{min-width:0}}
