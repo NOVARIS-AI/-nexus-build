@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { projectApi, type Project } from "../api";
 
 type Props = { prompt: string; onLoadPrompt: (prompt: string) => void; onSelectProject: (project: Project) => void };
@@ -9,17 +9,23 @@ export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const refreshSequence = useRef(0);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshSequence.current;
     try {
       const [health, items] = await Promise.all([projectApi.health(), projectApi.list()]);
+      if (requestId !== refreshSequence.current) return;
       setConnected(health.ok && health.databaseReady);
       setProjects(items);
     } catch {
+      if (requestId !== refreshSequence.current) return;
       setConnected(false);
       setMessage("Could not reach the project database. Try refreshing in a moment.");
     } finally {
-      setLoading(false);
+      if (requestId === refreshSequence.current) setLoading(false);
     }
   }, []);
 
@@ -43,12 +49,18 @@ export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }
   };
 
   const remove = async (id: string) => {
+    if (deletingId) return;
+    setDeletingId(id);
+    setMessage("");
     try {
       await projectApi.remove(id);
       setProjects(items => items.filter(item => item.id !== id));
+      setPendingDeleteId(null);
       setMessage("Project deleted.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not delete project.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -70,7 +82,10 @@ export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }
             <span className="saved-project-icon">◇</span>
             <span><b>{project.name}</b><small>{new Date(project.updated_at).toLocaleString()} · {project.status}</small></span>
           </button>
-          <button className="saved-project-delete" onClick={() => void remove(project.id)} aria-label={`Delete ${project.name}`} title="Delete project">×</button>
+          {pendingDeleteId === project.id ? <span className="saved-project-confirm" role="group" aria-label={`Confirm deletion of ${project.name}`}>
+            <button className="saved-project-delete" onClick={() => void remove(project.id)} disabled={deletingId !== null} aria-label={`Confirm delete ${project.name}`}>{deletingId === project.id ? "…" : "Delete"}</button>
+            <button className="saved-project-delete" onClick={() => setPendingDeleteId(null)} disabled={deletingId !== null} aria-label="Cancel deletion">Cancel</button>
+          </span> : <button className="saved-project-delete" onClick={() => setPendingDeleteId(project.id)} disabled={deletingId !== null} aria-label={`Delete ${project.name}`} title="Delete project">×</button>}
         </div>)}
     </div>
   </section>;
