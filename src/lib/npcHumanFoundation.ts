@@ -46,9 +46,7 @@ export const HUMAN_FOUNDATION_DEFAULTS: Record<HumanFeature, boolean> = {
 };
 
 export const OPTIONAL_HUMAN_FEATURES: HumanFeature[] = [
-  "coughing", "sneezing", "hiccups", "yawning", "sweating", "stretching",
-  "facialExpressions", "advancedConversations", "longTermMemory",
-  "advancedProceduralAnimation", "environmentalNeeds"
+  "coughing", "sneezing", "hiccups", "yawning", "sweating", "stretching", "longTermMemory"
 ];
 
 export function resolveHumanFoundation(
