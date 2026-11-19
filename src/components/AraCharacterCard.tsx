@@ -40,6 +40,8 @@ function loadAraEngine(): Promise<void> {
   return enginePromise;
 }
 
+export function preloadAraEngine() { void loadAraEngine().catch(() => undefined); }
+
 let activeCards = 0;
 const waiting: Array<() => void> = [];
 function pump() {

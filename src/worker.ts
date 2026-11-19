@@ -33,12 +33,15 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(url.pathname==="/api/npcs"&&request.method==="GET"){
   try{
    await ensureNpcCatalogue(env.DB);
-   const rawLimit=Number(url.searchParams.get("limit")??1200),limit=Math.max(1,Math.min(1200,Number.isFinite(rawLimit)?Math.floor(rawLimit):1200));
-   const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim().toLowerCase().replace(/[%_]/g,"");
-   const where=term?"WHERE lower(name) LIKE ? OR lower(role) LIKE ? OR lower(personality) LIKE ? OR lower(routine) LIKE ? OR lower(id) LIKE ?":"", like="%"+term+"%";
-   const args=term?[like,like,like,like,like]:[];
-   const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM npc_profiles "+where).bind(...args).first<{total:number}>();
-   const rows=await env.DB.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,preview_url,model_url FROM npc_profiles "+where+" ORDER BY id LIMIT ? OFFSET ?").bind(...args,limit,offset).all();
+   const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(48,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
+   const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim().toLowerCase().replace(/[%_]/g,""),category=url.searchParams.get("category")??"All";
+   const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
+   const clauses:string[]=[],args:(string|number)[]=[];
+   if(term){clauses.push("(lower(name) LIKE ? OR lower(role) LIKE ? OR lower(personality) LIKE ? OR lower(routine) LIKE ? OR lower(id) LIKE ?)");const like="%"+term+"%";args.push(like,like,like,like,like);}
+   const selectedRoles=categoryRoles[category];if(selectedRoles){clauses.push("role IN ("+selectedRoles.map(()=>"?").join(",")+")");args.push(...selectedRoles);}
+   const where=clauses.length?" WHERE "+clauses.join(" AND "):"";
+   const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM npc_profiles"+where).bind(...args).first<{total:number}>();
+   const rows=await env.DB.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,preview_url,model_url FROM npc_profiles"+where+" ORDER BY id LIMIT ? OFFSET ?").bind(...args,limit,offset).all();
    const total=count?.total??0,loaded=rows.results?.length??0;
    return json({npcs:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1"});
   }catch(error){return json({error:error instanceof Error?error.message:"NPC catalogue unavailable."},503);}
