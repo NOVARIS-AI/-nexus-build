@@ -3,6 +3,7 @@ import ProjectManager from "./components/ProjectManager";
 import SceneEditor from "./components/SceneEditor";
 import ToolchainStudio from "./components/ToolchainStudio";
 import GameplayStudio from "./components/GameplayStudio";
+import CoreFoundationStudio from "./components/CoreFoundationStudio";
 import NPCLibrary from "./components/NPCLibrary";
 import PopulationLibrary from "./components/PopulationLibrary";
 import PageErrorBoundary from "./components/PageErrorBoundary";
@@ -59,14 +60,7 @@ export default function App() {
         <div className="roadmap"><div><span className="road-icon">01</span><div><b>Prompt → Game plan</b><small>Prompt capture foundation</small></div><span className="state done">FOUNDATION</span></div><div><span className="road-icon">02</span><div><b>World & asset pipeline</b><small>Interactive procedural scene editor</small></div><span className="state">IN PROGRESS</span></div><div><span className="road-icon">03</span><div><b>Playable game runtime</b><small>Godot integration planned</small></div><span className="state">PLANNED</span></div></div>
       </div>;
     }
-    if (page === "director") return <section className="director-page">
-      <section className="director"><div className="director-head"><div className="spark">✦</div><div><b>AI Game Director</b><small>Turn a natural-language idea into a game plan</small></div><span className="model">PROMPT ENGINE · FOUNDATION</span></div>
-        <textarea aria-label="Describe your game idea" value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Describe the game you want to create... e.g. A third-person adventure through a lively Lagos neighbourhood with traffic, shops and quests."/>
-        <div className="prompt-foot"><span>Be as imaginative as you like.</span><button className="build-btn" onClick={build} disabled={!prompt.trim()}>✦ Generate game plan <span>↗</span></button></div>
-        <div className="suggestions">{starterPrompts.map(p => <button key={p} onClick={() => setPrompt(p)}>{p} <span>↗</span></button>)}</div>
-        {built && <div className="notice"><b>Idea captured.</b> Your prompt is ready for the next AI-planning stage. The current editor provides procedural 3D blockout geometry and interactive object transforms; AI asset generation and game export are not connected yet.</div>}
-      </section>
-    </section>;
+    if (page === "director") return <CoreFoundationStudio onProjectCreated={setCurrentProject}/>;
     if (page === "projects") return <ProjectManager prompt={prompt} onLoadPrompt={value => { setPrompt(value); setPage("director"); }} onSelectProject={setCurrentProject}/>;
     if (page === "world") return <SceneEditor project={currentProject} onProjectUpdated={setCurrentProject}/>;
     if (page === "npcs") return <NPCLibrary selectedNpc={selectedNpc} onBack={() => setPage("library")}/>;
