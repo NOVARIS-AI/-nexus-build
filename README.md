@@ -8,12 +8,16 @@ Nexus Build is an independent AI-assisted game creation studio. The long-term go
 
 - React + TypeScript + Vite studio shell.
 - Three.js live procedural 3D blockout preview.
-- Prompt capture for the future AI Game Director.
+- AI Game Director with structured game-blueprint generation and local fallback.
+- Engine registry with active Three.js preview and a clearly marked planned Godot export adapter.
+- Persistent generation-task lifecycle in Cloudflare D1 (queued, running, completed, failed).
+- Blueprint validation, JSON export and save-as-project workflow.
+- Hybrid processing policy: local-first for simple plans, optional Cloudflare Workers AI for complex plans.
 - World / Assets / Logic workspace navigation.
 - Responsive layout for desktop and mobile screens.
-- Clear prototype status: prompt capture is local UI state; it does not yet call an AI model or generate a complete game.
+- Clear prototype status: the Director generates and validates a game plan; it does not yet generate a complete playable game or export a Godot project.
 
-## Architecture direction
+## Core foundation implemented\n\nThe first NEXUS Core Foundation milestone now includes a versioned blueprint schema, engine registry, task persistence API, AI Director planning endpoint with a deterministic fallback, a local-first/hybrid processing decision, and validation before saving a blueprint as a project. The asset library currently stores imported files in browser IndexedDB; shared cloud asset storage and the full generation pipeline remain future work.\n\n## Architecture direction
 
 - `apps/web`: creator studio interface.
 - `apps/api`: project and generation API (to be added).
