@@ -20,10 +20,10 @@ export default function ProjectManager({ prompt, onLoadPrompt, onSelectProject }
       if (requestId !== refreshSequence.current) return;
       setConnected(health.ok && health.databaseReady);
       setProjects(items);
-    } catch {
+    } catch (error) {
       if (requestId !== refreshSequence.current) return;
       setConnected(false);
-      setMessage("Could not reach the project database. Try refreshing in a moment.");
+      setMessage(error instanceof Error ? error.message : "Could not load projects. Try refreshing in a moment.");
     } finally {
       if (requestId === refreshSequence.current) setLoading(false);
     }
