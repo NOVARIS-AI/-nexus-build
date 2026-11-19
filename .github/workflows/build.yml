@@ -15,4 +15,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - name: Validate database migration sequence
+        run: npm run check:migrations
       - run: npm run build
