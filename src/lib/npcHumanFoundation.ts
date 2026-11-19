@@ -34,7 +34,7 @@ export const HUMAN_FOUNDATION_DEFAULTS: Record<HumanFeature, boolean> = {
   objectInteraction: true,
   coughing: true,
   sneezing: true,
-  hiccups: false,
+  hiccups: true,
   yawning: true,
   sweating: true,
   stretching: true,
@@ -46,7 +46,9 @@ export const HUMAN_FOUNDATION_DEFAULTS: Record<HumanFeature, boolean> = {
 };
 
 export const OPTIONAL_HUMAN_FEATURES: HumanFeature[] = [
-  "coughing", "sneezing", "hiccups", "yawning", "sweating", "stretching", "longTermMemory"
+  "coughing", "sneezing", "hiccups", "yawning", "sweating", "stretching",
+  "facialExpressions", "advancedConversations", "longTermMemory",
+  "advancedProceduralAnimation", "environmentalNeeds"
 ];
 
 export function resolveHumanFoundation(
