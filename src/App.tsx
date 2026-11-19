@@ -6,6 +6,7 @@ import GameplayStudio from "./components/GameplayStudio";
 import NPCLibrary from "./components/NPCLibrary";
 import PopulationLibrary from "./components/PopulationLibrary";
 import type { Project } from "./api";
+import type { PopulationNpc } from "./lib/npcPopulation";
 
 type Page = "home" | "director" | "projects" | "world" | "npcs" | "library" | "gameplay" | "tools";
 
@@ -42,6 +43,7 @@ export default function App() {
   const [prompt, setPrompt] = useState("");
   const [built, setBuilt] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [selectedNpc, setSelectedNpc] = useState<PopulationNpc | null>(null);
   const build = () => { if (prompt.trim()) setBuilt(true); };
   const meta = pageMeta[page];
 
@@ -66,8 +68,8 @@ export default function App() {
     </section>;
     if (page === "projects") return <ProjectManager prompt={prompt} onLoadPrompt={value => { setPrompt(value); setPage("director"); }} onSelectProject={setCurrentProject}/>;
     if (page === "world") return <SceneEditor project={currentProject} onProjectUpdated={setCurrentProject}/>;
-    if (page === "npcs") return <NPCLibrary/>;
-    if (page === "library") return <PopulationLibrary/>;
+    if (page === "npcs") return <NPCLibrary selectedNpc={selectedNpc}/>;
+    if (page === "library") return <PopulationLibrary onPreview={npc => { setSelectedNpc(npc); setPage("npcs"); }}/>;
     if (page === "gameplay") return <GameplayStudio project={currentProject} onProjectUpdated={setCurrentProject}/>;
     return <ToolchainStudio/>;
   };
