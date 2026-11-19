@@ -30,15 +30,17 @@ function releaseSlot() {
 function stableCharacterSeed(id: string) {
   let hash = 2166136261;
   for (let i = 0; i < id.length; i++) hash = Math.imul(hash ^ id.charCodeAt(i), 16777619);
-  // Ara accepts whole-number seeds from 0 through 1,000,000,000 only.
   return (hash >>> 0) % 1_000_000_001;
 }
 
 export default function AraCharacterCard({ id, name, index, appearance }: Props) {
   const host = useRef<HTMLDivElement>(null);
+  const cancelCurrent = useRef<(() => void) | null>(null);
+  const startedKey = useRef(-1);
   const [visible, setVisible] = useState(false);
   const [status, setStatus] = useState("3D preview loads when visible");
   const [retryKey, setRetryKey] = useState(0);
+
   useEffect(() => {
     const node = host.current;
     if (!node || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
@@ -49,22 +51,42 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
     return () => observer.disconnect();
   }, []);
 
+  // Start each preview once when it first enters the viewport. Scrolling away must
+  // not tear down the custom element: Ara can take time to build its model and the
+  // browser should retain the finished WebGL scene when the user scrolls back.
   useEffect(() => {
-    if (!visible || !host.current) return;
+    if (!visible || !host.current || startedKey.current === retryKey) return;
+    cancelCurrent.current?.();
+    startedKey.current = retryKey;
+
     let cancelled = false;
     let element: HTMLElement | null = null;
     let hasSlot = false;
     let timeout = 0;
     let modelReady = false;
+    let slotReleased = false;
+    const release = () => {
+      if (hasSlot && !slotReleased) {
+        slotReleased = true;
+        hasSlot = false;
+        releaseSlot();
+      }
+    };
+    const cleanup = () => {
+      cancelled = true;
+      cancelQueued();
+      window.clearTimeout(timeout);
+      element?.remove();
+      if (hasSlot) release();
+    };
     const cancelQueued = requestSlot(() => {
       if (cancelled || !host.current) { releaseSlot(); return; }
       hasSlot = true;
       setStatus("Loading real 3D character…");
       void loadAraEngine().then(() => {
-        if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
+        if (cancelled || !host.current) { release(); return; }
         const character = document.createElement("ara-character");
         const characterAppearance = { ...getAraCharacterAppearance(id), ...(appearance ?? {}) };
-        // A stable, in-range seed gives each catalogue resident a repeatable procedural appearance.
         character.setAttribute("random", String(stableCharacterSeed(id)));
         character.setAttribute("animation", "idle");
         character.setAttribute("expression", "neutral");
@@ -82,14 +104,13 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           modelReady = true;
           window.clearTimeout(timeout);
           setStatus("REAL 3D CHARACTER · DRAG TO ROTATE");
+          release();
         }, { once: true });
         character.addEventListener("error", (event) => {
           window.clearTimeout(timeout);
-          const detail = event instanceof CustomEvent
-            ? event.detail as { message?: string } | undefined
-            : undefined;
+          const detail = event instanceof CustomEvent ? event.detail as { message?: string } | undefined : undefined;
           setStatus(`${detail?.message ? `3D model error: ${detail.message}` : "3D character data unavailable"} · ${formatAraDiagnosticSummary()}`);
-          if (hasSlot) { releaseSlot(); hasSlot = false; }
+          release();
         }, { once: true });
         host.current.replaceChildren(character);
         element = character;
@@ -97,26 +118,26 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           if (cancelled || modelReady) return;
           setStatus(`3D data is taking too long · ${formatAraDiagnosticSummary()}`);
           character.remove();
-          if (hasSlot) { releaseSlot(); hasSlot = false; }
+          release();
         }, 30000);
       }).catch((error) => {
         if (!cancelled) setStatus(`${error instanceof Error ? error.message : "Ara 3D engine unavailable"} · ${formatAraDiagnosticSummary()}`);
-        if (hasSlot) { releaseSlot(); hasSlot = false; }
+        release();
       });
     });
-    return () => {
-      cancelled = true;
-      cancelQueued();
-      window.clearTimeout(timeout);
-      element?.remove();
-      if (host.current) host.current.replaceChildren();
-      if (hasSlot) { releaseSlot(); hasSlot = false; }
-    };
+    cancelCurrent.current = cleanup;
+    return undefined;
   }, [visible, id, name, retryKey, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
+
+  useEffect(() => () => {
+    cancelCurrent.current?.();
+    cancelCurrent.current = null;
+    startedKey.current = -1;
+  }, []);
 
   return <div className="ara-npc-preview">
     <div className="ara-npc-canvas-host" ref={host} aria-label={name + " 3D preview"} />
-    {!visible && <span className="ara-npc-placeholder">3D character loads on scroll</span>}
+    {!visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <span className="ara-npc-placeholder">3D character loads on scroll</span>}
     {visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <><span className="ara-npc-status">{status}</span><button type="button" className="ara-npc-retry" onClick={() => setRetryKey(value => value + 1)}>Retry 3D preview</button></>}
     <span className="ara-npc-index">{String(index + 1).padStart(4, "0")}</span>
   </div>;
