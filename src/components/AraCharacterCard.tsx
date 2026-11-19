@@ -73,6 +73,7 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
   const host = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [status, setStatus] = useState("3D preview loads when visible");
+  const [retryKey, setRetryKey] = useState(0);
   useEffect(() => {
     const node = host.current;
     if (!node || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
@@ -146,12 +147,12 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
       if (host.current) host.current.replaceChildren();
       if (hasSlot) { releaseSlot(); hasSlot = false; }
     };
-  }, [visible, id, name, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
+  }, [visible, id, name, retryKey, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
 
   return <div className="ara-npc-preview">
     <div className="ara-npc-canvas-host" ref={host} aria-label={name + " 3D preview"} />
     {!visible && <span className="ara-npc-placeholder">3D character loads on scroll</span>}
-    {visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <span className="ara-npc-status">{status}</span>}
+    {visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <><span className="ara-npc-status">{status}</span><button type="button" className="ara-npc-retry" onClick={() => setRetryKey(value => value + 1)}>Retry 3D preview</button></>}
     <span className="ara-npc-index">{String(index + 1).padStart(4, "0")}</span>
   </div>;
 }
