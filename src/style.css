@@ -517,3 +517,17 @@
 
 .npc-library-back{display:inline-flex;align-items:center;gap:7px;margin:0 0 13px;padding:9px 12px;border:1px solid #655143;border-radius:7px;background:#29232a;color:#e9c094;font:600 10px 'DM Sans';cursor:pointer}
 .npc-library-back:hover{background:#3a302b;border-color:#c59a70}
+
+/* Streamed real Ara 3D NPC gallery + shared human foundation controls */
+.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.population-preview-box{height:260px;min-height:260px;background:radial-gradient(ellipse at 50% 70%,hsla(var(--avatar-hue),35%,38%,.4),transparent 65%),linear-gradient(145deg,#302a35,#17151c)}
+.ara-npc-preview{position:absolute;inset:0;display:block;overflow:hidden}
+.ara-npc-preview ara-character{display:block;width:100%;height:100%;min-height:240px}
+.ara-npc-placeholder,.ara-npc-status{position:absolute;z-index:3;left:9px;right:9px;top:9px;padding:6px 7px;border:1px solid #ffffff20;border-radius:5px;background:#15131bcc;color:#c9b8a8;font:7px 'DM Mono';letter-spacing:.35px;text-align:center;pointer-events:none}
+.ara-npc-index{position:absolute;z-index:3;right:9px;bottom:9px;padding:4px 6px;border-radius:4px;background:#111016bb;color:#d8b18b;font:7px 'DM Mono';letter-spacing:.8px;pointer-events:none}
+.human-foundation-card{border-color:#765b46;background:linear-gradient(145deg,#29232a,#211f26)}
+.human-feature-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:11px 0}
+.human-feature-list label{display:flex;align-items:center;gap:7px;min-width:0;padding:7px;border:1px solid #3e3842;border-radius:6px;background:#19171e;color:#c9becb;font-size:8px;line-height:1.35}
+.human-feature-list input{width:14px;height:14px;flex:0 0 14px;accent-color:#d5a477}
+.human-feature-list label:has(input:disabled){opacity:.55}
+@media(max-width:520px){.population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.population-preview-box{height:220px;min-height:220px}.ara-npc-preview ara-character{min-height:210px}.human-feature-list{grid-template-columns:1fr 1fr}}
