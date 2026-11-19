@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
-import { HumanCanvas, HumanEditor, useHumanPackage } from "humanforge/web";
-import type { HumanAvatar, HumanConfig } from "humanforge/human";
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
+import * as HumanForgeWeb from "humanforge/web";
+import type { HumanConfig } from "humanforge/human";
+const HumanCanvas = (HumanForgeWeb as unknown as { HumanCanvas: React.ComponentType<any> }).HumanCanvas;
+const HumanEditor = HumanForgeWeb.HumanEditor;
+const useHumanPackage = HumanForgeWeb.useHumanPackage;
 import { npcApi } from "../api";
 
 const HUMAN_ASSETS = "https://cdn.jsdelivr.net/gh/abdulrehman043/humanforge@v0.5.0/assets/human";
@@ -84,7 +86,7 @@ function HumanForgeLoader({ onRetry, selectedNpc }: { onRetry: () => void; selec
   const [currentConfig, setCurrentConfig] = useState<HumanConfig | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
-  const exportAvatar = useRef<HumanAvatar | null>(null);
+  const exportAvatar = useRef<any>(null);
   const [characterName, setCharacterName] = useState(selectedNpc?.name ?? "Amara");
   const [message, setMessage] = useState("Your edits stay in this character's editor until you save them.");
   const inferredConfig = useMemo(() => inferHumanConfig(selectedNpc), [selectedNpc?.id, selectedNpc?.appearance?.description]);
