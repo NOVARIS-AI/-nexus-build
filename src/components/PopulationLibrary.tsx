@@ -16,7 +16,7 @@ function categoryFor(npc: PopulationNpc): Category {
   return roleCategory[npc.role] ?? "Community";
 }
 function CharacterThumbnail({ npc, index }: { npc: PopulationNpc; index: number }) {
-  const seed = Number(npc.id.match(/(\\d+)$/)?.[1] ?? index + 1);
+  const seed = Number(npc.id.match(/(\d+)$/)?.[1] ?? index + 1);
   const skin = ["#8d5b42", "#b87955", "#d69b72", "#6e4939", "#a96f58", "#e0ad85"][seed % 6];
   const hair = ["#201b1a", "#30251e", "#16191e", "#3b2925", "#68442f"][Math.floor(seed / 2) % 5];
   const outfit = ["#6685a8", "#a66d69", "#668b75", "#b18a57", "#8675a8", "#5f9294", "#9a718f", "#8a795f"][seed % 8];
