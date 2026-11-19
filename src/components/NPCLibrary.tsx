@@ -1,3 +1,4 @@
+import type { HumanConfig } from "humanforge/human";
 import { useCallback, useEffect, useRef, useState } from "react";
 import HumanForgeStudio from "./HumanForgeStudio";
 import NPCProductionHub from "./NPCProductionHub";
@@ -93,7 +94,7 @@ function validAraShare(value: string) {
   }
 }
 
-function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; humanConfig?: Record<string, unknown>; dailySchedule?: string; behaviourNotes?: string } } | null }) {
+function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; humanConfig?: Partial<HumanConfig>; dailySchedule?: string; behaviourNotes?: string } } | null }) {
   const characterDefaults: CharacterSettings = selectedNpc
     ? { ...DEFAULTS, ...getAraCharacterAppearance(selectedNpc.id), ...(selectedNpc.appearance ?? {}), expression: "neutral" }
     : DEFAULTS;
