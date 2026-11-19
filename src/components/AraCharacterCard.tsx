@@ -81,6 +81,7 @@ export default function AraCharacterCard({ id, name, index }: Props) {
     let element: HTMLElement | null = null;
     let hasSlot = false;
     let timeout = 0;
+    let modelReady = false;
     const cancelQueued = requestSlot(() => {
       if (cancelled || !host.current) { releaseSlot(); return; }
       hasSlot = true;
@@ -101,16 +102,23 @@ export default function AraCharacterCard({ id, name, index }: Props) {
         character.style.width = "100%";
         character.style.height = "100%";
         character.setAttribute("aria-label", name + " 3D character");
-        character.addEventListener("load", () => setStatus("REAL 3D CHARACTER · DRAG TO ROTATE"), { once: true });
+        character.addEventListener("load", () => {
+          modelReady = true;
+          window.clearTimeout(timeout);
+          setStatus("REAL 3D CHARACTER · DRAG TO ROTATE");
+        }, { once: true });
         character.addEventListener("error", () => {
+          window.clearTimeout(timeout);
           setStatus("3D character unavailable · check connection");
           if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, { once: true });
         host.current.replaceChildren(character);
         element = character;
         timeout = window.setTimeout(() => {
-          if (cancelled) return;
-          if (host.current?.contains(character) && !character.isConnected) setStatus("3D preview could not start");
+          if (cancelled || modelReady) return;
+          setStatus("3D preview timed out · scroll away and back to retry");
+          character.remove();
+          if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, 18000);
       }).catch(() => {
         if (!cancelled) setStatus("Ara 3D engine unavailable · retry by scrolling back");
