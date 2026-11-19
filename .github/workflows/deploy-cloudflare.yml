@@ -27,7 +27,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Verify deployed API health
-        run: |
-          response="$(curl --silent --show-error --fail-with-body https://nexus-build.schoolershubit5.workers.dev/api/health)"
-          node -e 'const health=JSON.parse(process.argv[1]); if(!health.ok || !health.databaseReady) { console.error("API health check failed:", health); process.exit(1); } console.log("API and D1 database are ready.");' "$response"
+      - name: Run live API smoke tests
+        run: node scripts/smoke-test-api.mjs
+        env:
+          API_BASE_URL: https://nexus-build.schoolershubit5.workers.dev
