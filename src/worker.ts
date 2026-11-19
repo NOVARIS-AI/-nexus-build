@@ -34,6 +34,13 @@ const optionalText=(value:unknown,max:number)=>value===undefined||typeof value==
 export default { async fetch(request:Request,env:Env):Promise<Response>{
  const url=new URL(request.url);
  if(!url.pathname.startsWith("/api/"))return env.ASSETS.fetch(request);
+ let projectOwner: string | null = null;
+ if(url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/")){
+  if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Project authentication is not configured yet."},503);
+  const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
+  if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
+  projectOwner=identity.subject;
+ }
  if(request.method==="OPTIONS")return new Response(null,{status:204});
  if(url.pathname==="/api/health"&&request.method==="GET"){
   try{
