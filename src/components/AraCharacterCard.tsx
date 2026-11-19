@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
+import { loadAraEngine } from "../lib/araEngine";
 
 type Props = { id: string; name: string; index: number; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string } };
-
-import { loadAraEngine } from "../lib/araEngine";
 
 export function preloadAraEngine() { void loadAraEngine().catch(() => undefined); }
 
@@ -99,8 +98,8 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           character.remove();
           if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, 30000);
-      }).catch(() => {
-        if (!cancelled) setStatus("Ara 3D engine unavailable · retry by scrolling back");
+      }).catch((error) => {
+        if (!cancelled) setStatus(error instanceof Error ? error.message : "Ara 3D engine unavailable · tap retry");
         if (hasSlot) { releaseSlot(); hasSlot = false; }
       });
     });
