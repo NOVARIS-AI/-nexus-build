@@ -50,13 +50,16 @@ export const OPTIONAL_HUMAN_FEATURES: HumanFeature[] = [
   "advancedProceduralAnimation", "environmentalNeeds"
 ];
 
-export function resolveHumanFoundation(subject?: HumanFoundationSubject | null): HumanFoundationProfile {
+export function resolveHumanFoundation(
+  subject?: HumanFoundationSubject | null,
+  globalOverrides?: HumanFeatureSettings
+): HumanFoundationProfile {
   const features = { ...HUMAN_FOUNDATION_DEFAULTS };
-  if (subject?.humanFeatures) {
-    for (const feature of Object.keys(features) as HumanFeature[]) {
-      const override = subject.humanFeatures[feature];
-      if (typeof override === "boolean") features[feature] = override;
-    }
+  for (const feature of Object.keys(features) as HumanFeature[]) {
+    const globalValue = globalOverrides?.[feature];
+    const subjectValue = subject?.humanFeatures?.[feature];
+    if (typeof globalValue === "boolean") features[feature] = globalValue;
+    if (typeof subjectValue === "boolean") features[feature] = subjectValue;
   }
   return { version: 1, features };
 }
