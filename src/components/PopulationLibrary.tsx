@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AraCharacterCard from "./AraCharacterCard";
 import { generateNpcPopulation, type PopulationNpc } from "../lib/npcPopulation";
 
@@ -19,6 +19,9 @@ function categoryFor(npc: PopulationNpc): Category {
 export default function PopulationLibrary({ onPreview }: { onPreview: (npc: PopulationNpc) => void }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("All");
+  const [visibleCount, setVisibleCount] = useState(24);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const population = useMemo(() => generateNpcPopulation(1200), []);
   const counts = useMemo(() => categories.reduce((result, item) => {
     result[item] = item === "All" ? population.length : population.filter(npc => categoryFor(npc) === item).length;
@@ -32,6 +35,18 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
       return categoryMatch && searchMatch;
     });
   }, [population, query, category]);
+  const visibleNpcs = filtered.slice(0, visibleCount);
+  useEffect(() => { setVisibleCount(24); }, [query, category]);
+  useEffect(() => {
+    const root = gridRef.current;
+    const sentinel = loadMoreRef.current;
+    if (!root || !sentinel || visibleCount >= filtered.length) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) setVisibleCount(current => Math.min(current + 24, filtered.length));
+    }, { root, rootMargin: "280px 0px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [visibleCount, filtered.length]);
   return <section className="population-library">
     <div className="population-library-top">
       <div><span className="eyebrow">NEXUS CHARACTER DATABASE</span><h2>Resident index</h2><p>Browse 1,200+ residents with real 3D character previews. Models stream in as you scroll to keep the gallery responsive.</p></div>
@@ -44,9 +59,9 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
     <div className="population-category-list" aria-label="Filter NPCs by category">
       {categories.map(item => <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}<span>{counts[item]}</span></button>)}
     </div>
-    <div className="population-index-heading"><div><b>{category === "All" ? "All residents" : category}</b><small>Sorted by generated index · Real Ara 3D character previews · Select to customise</small></div><span>SHOWING {filtered.length.toLocaleString()} / {population.length.toLocaleString()}</span></div>
+    <div className="population-index-heading"><div><b>{category === "All" ? "All residents" : category}</b><small>Sorted by generated index · Real Ara 3D character previews · Select to customise</small></div><span>SHOWING {visibleNpcs.length.toLocaleString()} / {filtered.length.toLocaleString()}</span></div>
     {filtered.length ? <div className="population-card-grid">
-      {filtered.map((npc, index) => <article className="population-card" key={npc.id}>
+      {visibleNpcs.map((npc, index) => <article className="population-card" key={npc.id}>
         <div className="population-preview-box" style={{"--avatar-hue": (index * 47 + 24) % 360} as React.CSSProperties}>
           <div className="population-preview-glow" />
           <AraCharacterCard id={npc.id} name={npc.name} index={index} />
@@ -55,6 +70,7 @@ export default function PopulationLibrary({ onPreview }: { onPreview: (npc: Popu
         <div className="population-card-copy"><b>{npc.name}</b><small>{npc.role}</small><em>{categoryFor(npc)} · {npc.personality}</em></div>
         <button type="button" className="population-preview-button" onClick={() => onPreview(npc)}>Preview & customise <span>↗</span></button>
       </article>)}
+      {visibleNpcs.length < filtered.length && <div className="population-load-sentinel" ref={loadMoreRef}>Loading the next characters as you scroll…</div>}
     </div> : <div className="population-empty"><b>No NPCs found</b><span>Try another name, role, personality or category.</span><button type="button" onClick={() => { setQuery(""); setCategory("All"); }}>Clear filters</button></div>}
     <p className="population-library-foot">Each resident card loads a real Ara 3D human preview as you scroll. The 1,200+ profiles remain searchable; only a small number of 3D previews are mounted at once to protect device memory. Profiles use the available Ara starter presets with deterministic appearance variations. Imported/share-linked Ara designs can be used in the character studio.</p>
   </section>;
