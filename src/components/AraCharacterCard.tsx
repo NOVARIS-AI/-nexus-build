@@ -38,7 +38,8 @@ function stableCharacterSeed(id: string) {
 export default function AraCharacterCard({ id, name, index, appearance }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const [status, setStatus] = useState("3D preview loads when visible");
+  const [previewRequested, setPreviewRequested] = useState(false);
+  const [status, setStatus] = useState("Tap to load the 3D preview");
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
   }, []);
 
   useEffect(() => {
-    if (!visible || !host.current) return;
+    if (!visible || !previewRequested || !host.current) return;
     let cancelled = false;
     let element: HTMLElement | null = null;
     let hasSlot = false;
@@ -117,12 +118,13 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
       element?.remove();
       release();
     };
-  }, [visible, id, name, retryKey, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
+  }, [visible, previewRequested, id, name, retryKey, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
 
   return <div className="ara-npc-preview">
     <div className="ara-npc-canvas-host" ref={host} aria-label={name + " 3D preview"} />
-    {!visible && <span className="ara-npc-placeholder">3D preview loads when visible</span>}
-    {visible && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <><span className="ara-npc-status">{status}</span><button type="button" className="ara-npc-retry" onClick={() => setRetryKey(value => value + 1)}>Retry 3D preview</button></>}
+    {!previewRequested && <><span className="ara-npc-status">{visible ? "3D preview is paused to keep the catalogue smooth" : "3D preview loads on request"}</span><button type="button" className="ara-npc-retry" disabled={!visible} onClick={() => { setStatus("Preparing preview…"); setPreviewRequested(true); }}>Load 3D preview</button></>}
+    {previewRequested && status !== "REAL 3D CHARACTER · DRAG TO ROTATE" && <><span className="ara-npc-status">{status}</span><button type="button" className="ara-npc-retry" onClick={() => setRetryKey(value => value + 1)}>Retry 3D preview</button></>}
+    {previewRequested && status === "REAL 3D CHARACTER · DRAG TO ROTATE" && <button type="button" className="ara-npc-retry" onClick={() => setPreviewRequested(false)}>Close 3D preview</button>}
     <span className="ara-npc-index">{String(index + 1).padStart(4, "0")}</span>
   </div>;
 }
