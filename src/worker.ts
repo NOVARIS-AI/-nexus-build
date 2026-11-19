@@ -320,7 +320,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  const match=url.pathname.match(new RegExp("^/api/projects/([a-f0-9-]+)$","i"));
  if(match&&request.method==="GET"){
   try{
-   const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ?").bind(match[1]).first();
+   const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ? AND owner_id = ?").bind(match[1],projectOwner).first();
    return project?json({project}):json({error:"Project not found."},404);
   }catch{return json({error:"Could not load this project right now. Please try again."},503);}
  }
@@ -331,16 +331,16 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   if(body.name!==undefined&&(typeof body.name!=="string"||!body.name.trim()||body.name.trim().length>100))return json({error:"Project name must contain 1–100 characters."},400);
   if(!optionalText(body.description,2000)||!optionalText(body.prompt,12000))return json({error:"Project description or prompt exceeds the allowed length."},400);
   if(body.scene_json!==undefined&&!validJsonText(body.scene_json,262144))return json({error:"Scene data must be valid JSON and no larger than 256 KB."},400);
-  const existing=await env.DB.prepare("SELECT id FROM projects WHERE id = ?").bind(match[1]).first();if(!existing)return json({error:"Project not found."},404);
+  const existing=await env.DB.prepare("SELECT id FROM projects WHERE id = ? AND owner_id = ?").bind(match[1],projectOwner).first();if(!existing)return json({error:"Project not found."},404);
   const allowed=["draft","planning","prototype","archived"];if(body.status!==undefined&&!allowed.includes(body.status))return json({error:"Invalid project status."},400);
   try{
-   await env.DB.prepare("UPDATE projects SET name=COALESCE(?,name),description=COALESCE(?,description),prompt=COALESCE(?,prompt),status=COALESCE(?,status),scene_json=COALESCE(?,scene_json),updated_at=? WHERE id=?").bind(body.name?.trim()??null,body.description??null,body.prompt??null,body.status??null,body.scene_json??null,now(),match[1]).run();
-   const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ?").bind(match[1]).first();return project?json({project}):json({error:"Project could not be loaded after updating."},503);
+   await env.DB.prepare("UPDATE projects SET name=COALESCE(?,name),description=COALESCE(?,description),prompt=COALESCE(?,prompt),status=COALESCE(?,status),scene_json=COALESCE(?,scene_json),updated_at=? WHERE id=? AND owner_id=?").bind(body.name?.trim()??null,body.description??null,body.prompt??null,body.status??null,body.scene_json??null,now(),match[1],projectOwner).run();
+   const project=await env.DB.prepare("SELECT id,name,description,prompt,status,scene_json,created_at,updated_at FROM projects WHERE id = ? AND owner_id = ?").bind(match[1],projectOwner).first();return project?json({project}):json({error:"Project could not be loaded after updating."},503);
   }catch{return json({error:"Could not update the project. Please try again."},503);}
  }
  if(match&&request.method==="DELETE"){
   try{
-   const result=await env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(match[1]).run();
+   const result=await env.DB.prepare("DELETE FROM projects WHERE id = ? AND owner_id = ?").bind(match[1],projectOwner).run();
    if(!result.meta?.changes)return json({error:"Project not found."},404);
    return json({deleted:true,id:match[1]});
   }catch{return json({error:"Could not delete this project right now. Please try again."},503);}
