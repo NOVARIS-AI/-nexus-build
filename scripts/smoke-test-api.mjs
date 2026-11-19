@@ -58,4 +58,13 @@ if (!taskList.response.ok || !Array.isArray(taskList.body?.tasks) || !taskList.b
   throw new Error(`Generation task listing failed (${taskList.response.status}): ${JSON.stringify(taskList.body)}`);
 }
 
-console.log("API smoke tests passed: health, D1 readiness, projects, input validation and persistent generation tasks.");
+const worldGeneration = await readJson("/api/world/generate", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ prompt: "A small coastal town with a central plaza, roads, homes and trees.", biome: "village", size: "compact" }),
+});
+if (!worldGeneration.response.ok || !worldGeneration.body?.validated || !Array.isArray(worldGeneration.body?.world?.objects) || worldGeneration.body.world.objects.length < 10 || !worldGeneration.body?.taskId) {
+  throw new Error(`World generation failed (${worldGeneration.response.status}): ${JSON.stringify(worldGeneration.body)}`);
+}
+
+console.log("API smoke tests passed: health, projects, persistent tasks and generated world scene.");
