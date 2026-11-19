@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import HumanForgeStudio from "./HumanForgeStudio";
 import NPCProductionHub from "./NPCProductionHub";
 import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
+import { loadAraEngine } from "../lib/araEngine";
 
 type CharacterSettings = {
   preset: string;
@@ -32,58 +33,6 @@ declare global {
   }
 }
 
-let araEnginePromise: Promise<void> | null = null;
-
-function loadAraEngine(): Promise<void> {
-  if (customElements.get("ara-character")) return Promise.resolve();
-  if (araEnginePromise) return araEnginePromise;
-
-  araEnginePromise = new Promise<void>((resolve, reject) => {
-    let script = document.querySelector<HTMLScriptElement>('script[data-ara-embed="true"]');
-    const waitForElement = () => {
-      const timeout = window.setTimeout(() => reject(new Error("The 3D engine took too long to start.")), 12000);
-      customElements.whenDefined("ara-character").then(() => {
-        window.clearTimeout(timeout);
-        resolve();
-      }).catch(reject);
-    };
-
-    if (script) {
-      if (script.dataset.araLoaded === "true" || customElements.get("ara-character")) {
-        waitForElement();
-      } else {
-        script.addEventListener("load", () => {
-          script!.dataset.araLoaded = "true";
-          waitForElement();
-        }, { once: true });
-        script.addEventListener("error", () => reject(new Error("Could not download the 3D engine.")), { once: true });
-      }
-      return;
-    }
-
-    const hint = document.createElement("link");
-    hint.rel = "preconnect";
-    hint.href = "https://cdn.jsdelivr.net";
-    hint.crossOrigin = "anonymous";
-    document.head.appendChild(hint);
-
-    script = document.createElement("script");
-    script.type = "module";
-    script.src = "https://cdn.jsdelivr.net/npm/ara3d@0.9.0/dist/embed.js";
-    script.dataset.araEmbed = "true";
-    script.addEventListener("load", () => {
-      script!.dataset.araLoaded = "true";
-      waitForElement();
-    }, { once: true });
-    script.addEventListener("error", () => reject(new Error("Could not download the 3D engine.")), { once: true });
-    document.head.appendChild(script);
-  }).catch(error => {
-    araEnginePromise = null;
-    throw error;
-  });
-
-  return araEnginePromise;
-}
 
 function validAraShare(value: string) {
   try {
