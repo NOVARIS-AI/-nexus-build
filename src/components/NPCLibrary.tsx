@@ -264,14 +264,14 @@ function AraCharacterStudio() {
 }
 
 
-export default function NPCLibrary() {
+export default function NPCLibrary({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null }) {
   const [studio, setStudio] = useState<"humanforge" | "ara">("humanforge");
   return <section className="npc-library-shell">
     <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
       <button type="button" role="tab" aria-selected={studio === "humanforge"} className={studio === "humanforge" ? "active" : ""} onClick={() => setStudio("humanforge")}>In-app Human Creator</button>
       <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>
     </div>
-    {studio === "humanforge" ? <HumanForgeStudio /> : <AraCharacterStudio />}
+    {studio === "humanforge" ? <HumanForgeStudio selectedNpc={selectedNpc} /> : <AraCharacterStudio />}
     <NPCProductionHub />
   </section>;
 }
