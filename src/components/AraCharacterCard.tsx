@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
 
-type Props = { id: string; name: string; index: number };
+type Props = { id: string; name: string; index: number; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string } };
 
 let enginePromise: Promise<void> | null = null;
 function loadAraEngine(): Promise<void> {
@@ -63,7 +63,7 @@ function releaseSlot() {
   pump();
 }
 
-export default function AraCharacterCard({ id, name, index }: Props) {
+export default function AraCharacterCard({ id, name, index, appearance }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [status, setStatus] = useState("3D preview loads when visible");
@@ -91,13 +91,13 @@ export default function AraCharacterCard({ id, name, index }: Props) {
       void loadAraEngine().then(() => {
         if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
         const character = document.createElement("ara-character");
-        const appearance = getAraCharacterAppearance(id);
-        character.setAttribute("preset", appearance.preset);
+        const characterAppearance = { ...getAraCharacterAppearance(id), ...(appearance ?? {}) };
+        character.setAttribute("preset", characterAppearance.preset ?? "The Adventurer");
         character.setAttribute("animation", "idle");
         character.setAttribute("expression", "neutral");
         character.setAttribute("detail", "low");
         character.setAttribute("background", "#24232c");
-        character.setAttribute("colors", `outfit: ${appearance.outfit}; shoes: ${appearance.shoes}; carry: ${appearance.carry}`);
+        character.setAttribute("colors", `outfit: ${characterAppearance.outfit}; shoes: ${characterAppearance.shoes}; carry: ${characterAppearance.carry}`);
         character.setAttribute("auto-rotate", "");
         character.setAttribute("zoom", "");
         character.style.display = "block";
@@ -135,7 +135,7 @@ export default function AraCharacterCard({ id, name, index }: Props) {
       if (host.current) host.current.replaceChildren();
       if (hasSlot) { releaseSlot(); hasSlot = false; }
     };
-  }, [visible, id, name]);
+  }, [visible, id, name, appearance?.preset, appearance?.outfit, appearance?.shoes, appearance?.carry]);
 
   return <div className="ara-npc-preview" ref={host}>
     {!visible && <span className="ara-npc-placeholder">3D character loads on scroll</span>}

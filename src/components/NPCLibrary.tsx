@@ -93,9 +93,9 @@ function validAraShare(value: string) {
   }
 }
 
-function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string } | null }) {
+function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name: string; role: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string } } | null }) {
   const characterDefaults: CharacterSettings = selectedNpc
-    ? { ...DEFAULTS, ...getAraCharacterAppearance(selectedNpc.id), expression: "neutral" }
+    ? { ...DEFAULTS, ...getAraCharacterAppearance(selectedNpc.id), ...(selectedNpc.appearance ?? {}), expression: "neutral" }
     : DEFAULTS;
   const host = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Preparing 3D preview…");
@@ -197,7 +197,7 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
             <span className="npc-asset-tag">{selectedNpc ? "SELECTED NPC" : "EDITABLE SAMPLE"}</span>
           </div>
           <div className="npc-asset-tags"><span>Real human mesh</span><span>Rigged</span><span>Animated</span><span>{applied.detail} detail</span></div>
-          <p className="npc-asset-description">{selectedNpc ? "This is the same Ara preset and deterministic appearance used for this NPC in the Library. Customise it here or import a saved Ara share design." : "Edit the sample below, or import a complete character design from Ara. The model can be rotated and zoomed in this viewport."}</p>
+          <p className="npc-asset-description">{selectedNpc ? selectedNpc.appearance?.description ? "AI appearance brief: " + selectedNpc.appearance.description + ". Ara applies the saved starter preset and colour choices; the brief remains saved as character metadata." : "This is the same Ara preset and deterministic appearance used for this NPC in the Library. Customise it here or import a saved Ara share design." : "Edit the sample below, or import a complete character design from Ara. The model can be rotated and zoomed in this viewport."}</p>
           <div className="npc-asset-meta"><span>MODEL <b>Ara 3D · CC0 character data</b></span><span>PREVIEW <b>{modelLoaded ? "Ready" : "Loading"}</b></span></div>
         </div>
       </article>
@@ -268,7 +268,7 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
 }
 
 
-export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string } | null; onBack?: () => void }) {
+export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string } } | null; onBack?: () => void }) {
   const [studio, setStudio] = useState<"humanforge" | "ara">(selectedNpc ? "ara" : "humanforge");
   return <section className="npc-library-shell">
     {selectedNpc && <button type="button" className="npc-library-back" onClick={onBack}>← Back to NPC Library</button>}

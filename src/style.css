@@ -549,3 +549,6 @@
 .population-describe-submit{border:1px solid rgba(155,132,255,.45);background:rgba(132,105,235,.2);color:inherit;font-weight:700}
 .population-describe-submit:disabled{opacity:.4;cursor:not-allowed}
 .population-describe-clear{border:1px solid var(--border,rgba(255,255,255,.14));background:transparent;color:inherit}
+
+.population-describe-panel .population-describe-submit:disabled{opacity:.55;cursor:wait}
+.population-describe-panel .population-db-warning{font-size:12px;line-height:1.5}

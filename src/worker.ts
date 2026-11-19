@@ -1,7 +1,8 @@
 interface D1Result<T = Record<string, unknown>> { results?: T[]; success: boolean; meta?: { changes?: number }; }
 interface D1Statement { bind(...values: unknown[]): D1Statement; first<T = Record<string, unknown>>(): Promise<T | null>; all<T = Record<string, unknown>>(): Promise<D1Result<T>>; run(): Promise<D1Result>; }
 interface D1Database { prepare(query: string): D1Statement; batch(statements: D1Statement[]): Promise<D1Result[]>; }
-interface Env { DB: D1Database; ASSETS: { fetch(request: Request): Promise<Response> }; }
+interface WorkersAI { run(model:string,input:{messages:{role:"system"|"user"|"assistant";content:string}[];max_tokens?:number;temperature?:number}):Promise<{response?:string}>; }
+interface Env { DB: D1Database; AI: WorkersAI; ASSETS: { fetch(request: Request): Promise<Response> }; }
 const firstNames=["Amina","Ayo","Bisi","Chika","Dami","Efe","Emeka","Faruq","Fola","Hadiza","Ife","Ikenna","Jide","Kelechi","Lara","Mariam","Nneka","Obinna","Ola","Olu","Onyeka","Sade","Tari","Tobi","Uche","Zainab","Ada","Boma","Chinwe","David","Ejiro","Farida","Gbenga","Hauwa","Ini","Jumoke","Kemi","Lekan","Moyo","Ngozi","Oghene","Rita","Seyi","Temi","Umar","Yemi","Zara","Abiola","Blessing","Chinedu","Daniel","Esther","Femi","Grace","Ibrahim","Joy","Kunle","Musa","Nana","Peter","Samuel","Tunde"];
 const surnames=["Adebayo","Adeyemi","Afolabi","Agu","Akande","Anyanwu","Balogun","Bello","Chukwu","Danjuma","Eze","Ezeani","Falana","Garba","Ibrahim","Idris","Iheanacho","Johnson","Kalu","Lawal","Musa","Nwosu","Obi","Okafor","Okeke","Okoro","Oladipo","Olawale","Osei","Sani","Soyinka","Udo","Usman","Yakubu","Yusuf","Abubakar","Akinyemi","Bakare","Duru","Etim","Iroko","Jatau","Kehinde","Mordi","Nwachukwu","Ojo","Oni","Salami"];
 const roles=["Shopkeeper","Teacher","Student","Nurse","Doctor","Mechanic","Bus driver","Food vendor","Tailor","Artist","Musician","Farmer","Security officer","Cleaner","Engineer","Photographer","Hair stylist","Barber","Electrician","Plumber","Delivery rider","Market trader","Chef","Builder","Librarian","Journalist","Designer","Gardener","Receptionist","Community volunteer"];
@@ -30,6 +31,36 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(!url.pathname.startsWith("/api/"))return env.ASSETS.fetch(request);
  if(request.method==="OPTIONS")return new Response(null,{status:204});
  if(url.pathname==="/api/health"&&request.method==="GET")return json({ok:true,service:"nexus-build-api",database:"bound",timestamp:now()});
+
+ if(url.pathname==="/api/npcs/generate"&&request.method==="POST"){
+  try{
+   let body:{description?:string;category?:string};
+   try{body=await request.json();}catch{return json({error:"Send a valid NPC description."},400);}
+   const description=(body.description??"").trim().slice(0,900);
+   if(description.length<12)return json({error:"Please describe the NPC in at least 12 characters."},400);
+   const category=(body.category??"All").trim();
+   const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
+   const allowedRoles=categoryRoles[category]??roles;
+   const prompt="Create one original, believable game NPC from this description. Return ONLY a valid JSON object, no markdown.\nDescription: "+description+"\nSelected category: "+category+"\nChoose role from this exact list: "+allowedRoles.join(", ")+".\nReturn keys: name, role, personality, routine, greeting, dialogue, appearanceDescription, preset, outfit, shoes, carry, dailySchedule, behaviourNotes.\nRules: name is a plausible full name; role must exactly match an allowed role; personality is a concise trait phrase; routine is a short setting/routine label; greeting is one natural sentence; dialogue is 2-3 natural sentences; appearanceDescription describes visible clothing, hair and accessories without claiming a unique generated mesh; preset must be one of The Female Executive, The Adventurer, The Detective, The Athlete; outfit, shoes and carry are 6-digit hex colours; dailySchedule and behaviourNotes are short and practical. Keep the character suitable for a general-audience game.";
+   const generated=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:"You are a game character designer. Follow the schema exactly and return valid JSON only."},{role:"user",content:prompt}],max_tokens:850,temperature:0.75});
+   const raw=(generated.response??"").trim(),start=raw.indexOf("{"),end=raw.lastIndexOf("}");
+   if(start<0||end<=start)throw new Error("The AI returned an unreadable character profile. Please try again.");
+   const character=JSON.parse(raw.slice(start,end+1)) as Record<string,unknown>;
+   const textField=(key:string,max:number,fallback:string)=>typeof character[key]==="string"?(character[key] as string).trim().slice(0,max)||fallback:fallback;
+   const role=allowedRoles.includes(String(character.role))?String(character.role):allowedRoles[0];
+   const validHex=(value:unknown,fallback:string)=>typeof value==="string"&&/^#[0-9a-fA-F]{6}$/.test(value)?value:fallback;
+   const presets=["The Female Executive","The Adventurer","The Detective","The Athlete"];
+   const preset=presets.includes(String(character.preset))?String(character.preset):"The Adventurer";
+   const id="custom-"+crypto.randomUUID(),timestamp=now();
+   const appearance={version:1,source:"cloudflare-workers-ai",description:textField("appearanceDescription",500,"Custom character appearance"),dailySchedule:textField("dailySchedule",500,"Follows a daily routine"),behaviourNotes:textField("behaviourNotes",500,"Uses the shared human behaviour foundation"),preset,outfit:validHex(character.outfit,"#6685a8"),shoes:validHex(character.shoes,"#29252b"),carry:validHex(character.carry,"#8a6549")};
+   const npc={id,name:textField("name",80,"New Resident"),role,dialogue:textField("dialogue",700,"I enjoy being part of this neighbourhood."),x:0,z:0,radius:2.8,personality:textField("personality",120,"friendly and curious"),routine:textField("routine",100,"community"),greeting:textField("greeting",240,"Hello! Nice to meet you."),appearance_json:JSON.stringify(appearance),preview_url:null,model_url:null,created_at:timestamp};
+   await env.DB.prepare("INSERT INTO npc_profiles (id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)").bind(npc.id,npc.name,npc.role,npc.dialogue,npc.x,npc.z,npc.radius,npc.personality,npc.routine,npc.greeting,npc.appearance_json,npc.created_at).run();
+   return json({npc,source:"cloudflare-workers-ai",saved:true},201);
+  }catch(error){
+   const message=error instanceof Error?error.message:"NPC generation is temporarily unavailable.";
+   return json({error:message.includes("AI")||message.includes("binding")?"AI character generation is not available on this Worker yet. Check the Workers AI binding in Cloudflare and try again.":message},503);
+  }
+ }
  if(url.pathname==="/api/npcs"&&request.method==="GET"){
   try{
    await ensureNpcCatalogue(env.DB);

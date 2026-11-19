@@ -9,6 +9,7 @@ export type PopulationNpc = {
   routine: string;
   greeting: string;
   populationGenerated: true;
+  appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; dailySchedule?: string; behaviourNotes?: string };
 };
 
 const firstNames = ["Amina","Ayo","Bisi","Chika","Dami","Efe","Emeka","Faruq","Fola","Hadiza","Ife","Ikenna","Jide","Kelechi","Lara","Mariam","Nneka","Obinna","Ola","Olu","Onyeka","Sade","Tari","Tobi","Uche","Zainab","Ada","Boma","Chinwe","David","Ejiro","Farida","Gbenga","Hauwa","Ini","Jumoke","Kemi","Lekan","Moyo","Ngozi","Oghene","Rita","Seyi","Temi","Umar","Yemi","Zara","Abiola","Blessing","Chinedu","Daniel","Esther","Femi","Grace","Ibrahim","Joy","Kunle","Musa","Nana","Peter","Samuel","Tunde"];

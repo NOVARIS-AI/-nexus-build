@@ -3,6 +3,7 @@
   "name": "nexus-build",
   "main": "src/worker.ts",
   "compatibility_date": "2026-11-18",
+  "ai": { "binding": "AI" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
