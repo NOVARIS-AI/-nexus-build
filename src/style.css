@@ -522,6 +522,7 @@
 .population-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .population-preview-box{height:260px;min-height:260px;background:radial-gradient(ellipse at 50% 70%,hsla(var(--avatar-hue),35%,38%,.4),transparent 65%),linear-gradient(145deg,#302a35,#17151c)}
 .ara-npc-preview{position:absolute;inset:0;display:block;overflow:hidden}
+.ara-npc-canvas-host{position:absolute;inset:0;width:100%;height:100%;min-height:240px}
 .ara-npc-preview ara-character{display:block;width:100%;height:100%;min-height:240px}
 .ara-npc-placeholder,.ara-npc-status{position:absolute;z-index:3;left:9px;right:9px;top:9px;padding:6px 7px;border:1px solid #ffffff20;border-radius:5px;background:#15131bcc;color:#c9b8a8;font:7px 'DM Mono';letter-spacing:.35px;text-align:center;pointer-events:none}
 .ara-npc-index{position:absolute;z-index:3;right:9px;bottom:9px;padding:4px 6px;border-radius:4px;background:#111016bb;color:#d8b18b;font:7px 'DM Mono';letter-spacing:.8px;pointer-events:none}
