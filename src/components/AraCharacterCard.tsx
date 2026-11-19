@@ -31,7 +31,7 @@ function loadAraEngine(): Promise<void> {
     document.head.appendChild(hint);
     script = document.createElement("script");
     script.type = "module";
-    script.src = "https://cdn.jsdelivr.net/npm/ara3d@0/dist/embed.js";
+    script.src = "https://cdn.jsdelivr.net/npm/ara3d@0.9.0/dist/embed.js";
     script.dataset.araEmbed = "true";
     script.addEventListener("load", () => { script!.dataset.araLoaded = "true"; ready(); }, { once: true });
     script.addEventListener("error", () => reject(new Error("Ara 3D engine could not load.")), { once: true });
@@ -63,6 +63,12 @@ function releaseSlot() {
   pump();
 }
 
+function stableCharacterSeed(id: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i++) hash = Math.imul(hash ^ id.charCodeAt(i), 16777619);
+  return (hash >>> 0) || 1;
+}
+
 export default function AraCharacterCard({ id, name, index, appearance }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -92,12 +98,15 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
         if (cancelled || !host.current) { if (hasSlot) { releaseSlot(); hasSlot = false; } return; }
         const character = document.createElement("ara-character");
         const characterAppearance = { ...getAraCharacterAppearance(id), ...(appearance ?? {}) };
-        character.setAttribute("preset", characterAppearance.preset ?? "The Adventurer");
+        // Ara's seeded random input builds a stable, distinct resident instead of
+        // cycling the same small set of preset meshes across the whole catalogue.
+        character.setAttribute("random", String(stableCharacterSeed(id)));
         character.setAttribute("animation", "idle");
         character.setAttribute("expression", "neutral");
         character.setAttribute("detail", "low");
         character.setAttribute("background", "#24232c");
         character.setAttribute("colors", `outfit: ${characterAppearance.outfit}; shoes: ${characterAppearance.shoes}; carry: ${characterAppearance.carry}`);
+        character.setAttribute("look-at", "camera");
         character.setAttribute("auto-rotate", "");
         character.setAttribute("zoom", "");
         character.style.display = "block";
@@ -109,19 +118,20 @@ export default function AraCharacterCard({ id, name, index, appearance }: Props)
           window.clearTimeout(timeout);
           setStatus("REAL 3D CHARACTER · DRAG TO ROTATE");
         }, { once: true });
-        character.addEventListener("error", () => {
+        character.addEventListener("error", (event) => {
           window.clearTimeout(timeout);
-          setStatus("3D character unavailable · check connection");
+          const detail = (event as CustomEvent<{ message?: string }>).detail;
+          setStatus(detail?.message ? `3D model error: ${detail.message}` : "3D character data unavailable · check connection");
           if (hasSlot) { releaseSlot(); hasSlot = false; }
         }, { once: true });
         host.current.replaceChildren(character);
         element = character;
         timeout = window.setTimeout(() => {
           if (cancelled || modelReady) return;
-          setStatus("3D preview timed out · scroll away and back to retry");
+          setStatus("3D data is taking too long · scroll away and back to retry");
           character.remove();
           if (hasSlot) { releaseSlot(); hasSlot = false; }
-        }, 18000);
+        }, 30000);
       }).catch(() => {
         if (!cancelled) setStatus("Ara 3D engine unavailable · retry by scrolling back");
         if (hasSlot) { releaseSlot(); hasSlot = false; }
