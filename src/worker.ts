@@ -36,6 +36,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(!url.pathname.startsWith("/api/"))return env.ASSETS.fetch(request);
  if(request.method==="OPTIONS")return new Response(null,{status:204});
  let projectOwner: string | null = null;
+ let userSubject: string | null = null;
  const isProjectRoute=url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/");
  const isTaskRoute=url.pathname==="/api/tasks"||url.pathname.startsWith("/api/tasks/");
  const isProtectedWrite=
@@ -50,6 +51,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Cloudflare Access authentication is not configured."},503);
   const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
   if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
+  userSubject=identity.subject;
   if(isProjectRoute)projectOwner=identity.subject;
  }
  if(url.pathname==="/api/health"&&request.method==="GET"){
@@ -102,14 +104,14 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    if(!["Texture","Concept art","Sprite"].includes(assetType))return json({error:"Choose Texture, Concept art or Sprite."},400);
    taskId="asset-"+crypto.randomUUID();
    const timestamp=now(),taskInput=JSON.stringify({prompt,assetType,model:"@cf/black-forest-labs/flux-1-schnell"});
-   await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").bind(taskId,"asset-image","running",taskInput,"cloudflare-workers-ai-flux",timestamp,timestamp).run();
+   await env.DB.prepare("INSERT INTO generation_tasks (id,owner_id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)").bind(taskId,userSubject,"asset-image","running",taskInput,"cloudflare-workers-ai-flux",timestamp,timestamp).run();
    const imageResult=await env.AI.run("@cf/black-forest-labs/flux-1-schnell",{prompt,steps:4});
    const image=imageResult.image;
    if(typeof image!=="string"||image.length<100||image.length>12000000)throw new Error("Image generation returned an invalid or oversized result.");
-   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(JSON.stringify({assetType,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",prompt}),now(),taskId).run();
+   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=? AND owner_id=?").bind(JSON.stringify({assetType,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",prompt}),now(),taskId,userSubject).run();
    return json({imageDataUrl:"data:image/jpeg;base64,"+image,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",taskId,assetType,source:"cloudflare-workers-ai"},201);
   }catch(error){
-   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=?").bind(error instanceof Error?error.message:"Image generation failed.",now(),taskId).run();}catch{}}
+   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=? AND owner_id=?").bind(error instanceof Error?error.message:"Image generation failed.",now(),taskId,userSubject).run();}catch{}}
    return json({error:error instanceof Error?error.message:"AI image generation is temporarily unavailable."},503);
   }
  }
@@ -122,7 +124,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    if(prompt.length<12)return json({error:"Describe the 3D asset in at least 12 characters."},400);
    taskId="asset3d-"+crypto.randomUUID();
    const stamp=now(),input=JSON.stringify({prompt,model:"@cf/meta/llama-3.1-8b-instruct",pipeline:"ai-guided-procedural"});
-   await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").bind(taskId,"asset-3d","running",input,"workers-ai-procedural-mesh",stamp,stamp).run();
+   await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").bind(taskId,userSubject,"asset-3d","running",input,"workers-ai-procedural-mesh",stamp,stamp).run();
    const instruction="Create a compact 3D game prop from the user's description. Return ONLY JSON with keys name, description, parts. parts must contain 3 to 18 objects. Each object has shape (box, sphere, cylinder, cone, torus), position [x,y,z], scale [x,y,z], color (#RRGGBB), and optional rotation [x,y,z]. Use a coherent low-poly assembly, grounded at y=0, overall dimensions within 6 units. Avoid tiny details. Use varied components to make a recognizable game-ready prop. User description: "+prompt;
    const generated=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:"You are a technical 3D prop designer. Return strict JSON only. Never include markdown."},{role:"user",content:instruction}],max_tokens:1300,temperature:0.35});
    const raw=(generated.response??"").trim(),start=raw.indexOf("{"),end=raw.lastIndexOf("}");
@@ -137,10 +139,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
     return {shape,position:vector(p.position,[0,0,0],-3,3),scale:vector(p.scale,[1,1,1],0.08,3),rotation:vector(p.rotation,[0,0,0],-6.28,6.28),color};
    });
    const blueprint={name:typeof parsed.name==="string"?parsed.name.slice(0,80):"Generated game prop",description:typeof parsed.description==="string"?parsed.description.slice(0,240):prompt,parts};
-   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(JSON.stringify(blueprint),now(),taskId).run();
+   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(JSON.stringify(blueprint),now(),taskId,userSubject).run();
    return json({blueprint,taskId,source:"workers-ai-procedural"},201);
   }catch(error){
-   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=?").bind(error instanceof Error?error.message:"3D generation failed.",now(),taskId).run();}catch{}}
+   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=?").bind(error instanceof Error?error.message:"3D generation failed.",now(),taskId,userSubject).run();}catch{}}
    return json({error:error instanceof Error?error.message:"3D asset generation is temporarily unavailable."},503);
   }
  }
@@ -233,7 +235,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   if(prompt.length<12)return json({error:"Please describe the world in at least 12 characters."},400);
   if(!["city","village","fantasy","forest","desert","sci-fi"].includes(biome)||!["compact","standard","large"].includes(size))return json({error:"Choose a supported environment and world size."},400);
   const taskId=crypto.randomUUID(),stamp=now();
-  try{await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?, 'running',?,?,?,?)").bind(taskId,"world-scene",prompt,"three",stamp,stamp).run();}
+  try{await env.DB.prepare("INSERT INTO generation_tasks (id,owner_id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?, 'running',?,?,?,?)").bind(taskId,userSubject,"world-scene",prompt,"three",stamp,stamp).run();}
   catch{return json({error:"Could not create a world-generation task. Check the generation task migration."},503);}
   let world=createFallbackWorld(prompt,biome,size),source="procedural-fallback";
   try{
@@ -249,7 +251,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    }
   }catch{}
   const result=JSON.stringify(world);
-  try{await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(result,now(),taskId).run();}
+  try{await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=?").bind(result,now(),taskId,userSubject).run();}
   catch{return json({error:"World was generated but its task record could not be saved. Please retry."},503);}
   return json({world,source,taskId,objectCount:world.objects.length,validated:validateWorldPlan(world).length===0});
  }
@@ -279,7 +281,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  }
  if(url.pathname==="/api/tasks"&&request.method==="GET"){
   const limit=Math.min(50,Math.max(1,Number(url.searchParams.get("limit"))||20));
-  const rows=await env.DB.prepare("SELECT id,type,status,input,engine,result_json,error,created_at,updated_at FROM generation_tasks ORDER BY created_at DESC LIMIT ?").bind(limit).all();
+  const rows=await env.DB.prepare("SELECT id,type,status,input,engine,result_json,error,created_at,updated_at FROM generation_tasks WHERE owner_id=? ORDER BY created_at DESC LIMIT ?").bind(userSubject,limit).all();
   return json({tasks:(rows.results??[]).map((row:any)=>({...row,result:row.result_json?JSON.parse(String(row.result_json)):null,createdAt:row.created_at,updatedAt:row.updated_at}))});
  }
  if(url.pathname==="/api/tasks"&&request.method==="POST"){
@@ -288,7 +290,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   const type=(body.type??"").trim(),input=(body.input??"").trim(),engine=body.engine??"auto";
   if(!type||type.length>80||input.length<1||input.length>4000||!["auto","three","godot"].includes(engine))return json({error:"Task type, input or engine is invalid."},400);
   const id=crypto.randomUUID(),stamp=now();
-  try{await env.DB.prepare("INSERT INTO generation_tasks (id,type,status,input,engine,created_at,updated_at) VALUES (?,?, 'queued',?,?,?,?)").bind(id,type,input,engine,stamp,stamp).run();return json({task:{id,type,status:"queued",input,engine,createdAt:stamp,updatedAt:stamp}},201);}
+  try{await env.DB.prepare("INSERT INTO generation_tasks (id,owner_id,type,status,input,engine,created_at,updated_at) VALUES (?,?,?, 'queued',?,?,?,?)").bind(id,userSubject,type,input,engine,stamp,stamp).run();return json({task:{id,type,status:"queued",input,engine,createdAt:stamp,updatedAt:stamp}},201);}
   catch{return json({error:"Could not store generation task. Apply migration 0005 and retry."},503);}
  }
  const taskMatch=url.pathname.match(/^\/api\/tasks\/([a-f0-9-]+)$/i);
@@ -300,9 +302,9 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   if(resultJson&&resultJson.length>180000)return json({error:"Task result is too large to store."},413);
   const stamp=now();
   try{
-   const updated=await env.DB.prepare("UPDATE generation_tasks SET status=?,result_json=COALESCE(?,result_json),error=?,updated_at=? WHERE id=?").bind(body.status,resultJson,body.error?.slice(0,1000)??null,stamp,taskMatch[1]).run();
+   const updated=await env.DB.prepare("UPDATE generation_tasks SET status=?,result_json=COALESCE(?,result_json),error=?,updated_at=? WHERE id=? AND owner_id=?").bind(body.status,resultJson,body.error?.slice(0,1000)??null,stamp,taskMatch[1],userSubject).run();
    if(!updated.meta?.changes)return json({error:"Generation task not found."},404);
-   const row=await env.DB.prepare("SELECT id,type,status,input,engine,result_json,error,created_at,updated_at FROM generation_tasks WHERE id=?").bind(taskMatch[1]).first<Record<string,unknown>>();
+   const row=await env.DB.prepare("SELECT id,type,status,input,engine,result_json,error,created_at,updated_at FROM generation_tasks WHERE id=? AND owner_id=?").bind(taskMatch[1],userSubject).first<Record<string,unknown>>();
    return json({task:row?{...row,result:row.result_json?JSON.parse(String(row.result_json)):null,createdAt:row.created_at,updatedAt:row.updated_at}:null});
   }catch{return json({error:"Could not update generation task."},503);}
  }
