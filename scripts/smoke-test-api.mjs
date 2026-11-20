@@ -34,6 +34,7 @@ for (const [label, path, init] of [
   }
 }
 for (const [label, path, init] of [
+  ["asset catalogue invalid identity", "/api/assets?limit=3", { headers: { "Cf-Access-Jwt-Assertion": "invalid-test-token" } }],
   ["task listing", "/api/tasks"],
   ["task creation", "/api/tasks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "anonymous-test", input: "This should be blocked.", engine: "auto" }) }],
   ["asset registration", "/api/assets/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: "anonymous-test", name: "Anonymous", assetType: "Texture" }) }],
