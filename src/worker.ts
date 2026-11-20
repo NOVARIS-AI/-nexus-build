@@ -294,18 +294,32 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(characterMatch&&request.method==="PUT"){
   try{
    const id=decodeURIComponent(characterMatch[1]);
-   let body:{config?:unknown};
+   let body:{config?:unknown;design?:unknown};
    try{body=await request.json();}catch{return json({error:"Send a valid character configuration."},400);}
-   if(!body.config||typeof body.config!=="object"||Array.isArray(body.config))return json({error:"A valid HumanForge character configuration is required."},400);
-   const encoded=JSON.stringify(body.config);
-   if(encoded.length>60000)return json({error:"Character configuration is too large to save."},413);
+   const payload=body.design??body.config;
+   if(!payload||typeof payload!=="object"||Array.isArray(payload))return json({error:"A valid character design is required."},400);
+   const encoded=JSON.stringify(payload);
+   if(encoded.length>60000)return json({error:"Character design is too large to save."},413);
    const existing=await env.DB.prepare("SELECT appearance_json FROM npc_profiles WHERE id=?").bind(id).first<{appearance_json:string}>();
    if(!existing)return json({error:"NPC profile not found."},404);
    let appearance:Record<string,unknown>={};
    try{const parsed=JSON.parse(existing.appearance_json||"{}");if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))appearance=parsed;}catch{}
-   appearance.humanConfig=body.config;
-   appearance.humanConfigUpdatedAt=now();
-   await env.DB.prepare("UPDATE npc_profiles SET appearance_json=? WHERE id=?").bind(JSON.stringify(appearance),id).run();
+   if(body.design!==undefined){
+    const design=payload as Record<string,unknown>;
+    const families=["humanoid","animal","creature","fantasy","robot","anthropomorphic","alien"];
+    const styles=["anime","realistic-3d","cartoon","stylized-3d","pixel-art"];
+    const family=typeof design.characterFamily==="string"&&families.includes(design.characterFamily)?design.characterFamily:null;
+    const style=typeof design.visualStyle==="string"&&styles.includes(design.visualStyle)?design.visualStyle:null;
+    appearance.characterDesign=design;
+    appearance.characterFamily=family??appearance.characterFamily;
+    appearance.visualStyle=style??appearance.visualStyle;
+    appearance.designUpdatedAt=now();
+    await env.DB.prepare("UPDATE npc_profiles SET appearance_json=?,character_family=COALESCE(?,character_family),visual_style=COALESCE(?,visual_style),asset_status='design-template' WHERE id=?").bind(JSON.stringify(appearance),family,style,id).run();
+   }else{
+    appearance.humanConfig=body.config;
+    appearance.humanConfigUpdatedAt=now();
+    await env.DB.prepare("UPDATE npc_profiles SET appearance_json=? WHERE id=?").bind(JSON.stringify(appearance),id).run();
+   }
    return json({saved:true,id});
   }catch(error){return json({error:error instanceof Error?error.message:"Could not save this character."},500);}
  }
