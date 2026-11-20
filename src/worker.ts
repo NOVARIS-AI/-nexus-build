@@ -48,7 +48,7 @@ async function ensureCharacterLibraryExpansion(db:D1Database){
  const marker=await db.prepare("SELECT seed_key FROM character_library_seed_state WHERE seed_key=?").bind("character-expansion-v1").first<{seed_key:string}>();
  if(marker)return;
  const stamp=new Date().toISOString();
- const legacyRows=await db.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json FROM npc_profiles WHERE id LIKE 'population-%' ORDER BY id LIMIT 500").all<any>();
+ const legacyRows=await db.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json FROM npc_profiles WHERE id LIKE 'population-%' AND legacy_profile_json IS NULL ORDER BY id LIMIT 500").all<any>();
  const updates:D1Statement[]=[];
  for(let i=0;i<(legacyRows.results??[]).length;i++){
   const row=legacyRows.results![i],spec=characterSpec(i),suffix=String(i+1).padStart(3,"0");
