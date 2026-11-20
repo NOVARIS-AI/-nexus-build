@@ -5,7 +5,7 @@ type AssetRecord={id:string;name:string;type:string;size:number;updated:number;b
 type Preview={url:string;prompt:string;taskId:string;mimeType:string;model:string;assetType:string;cacheHit:boolean};
 const DB_NAME="nexus-build-workspace",STORE="assets";
 const MODEL="@cf/black-forest-labs/flux-1-schnell";
-function openAssetDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+function openAssetDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,2);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:"id"});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 async function saveAsset(asset:AssetRecord){const db=await openAssetDb();await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put(asset);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});db.close();}
 function promptKey(prompt:string){return MODEL+":"+prompt.trim().toLowerCase().replace(/\s+/g," ");}
 function fileName(prompt:string){const slug=prompt.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)||"nexus-generated-asset";return slug+".jpg";}
@@ -30,7 +30,7 @@ export default function AIAssetStudio({assets,onSaved}:{assets:AssetRecord[];onS
   try{
    const blob=await fetch(preview.url).then(response=>{if(!response.ok)throw new Error("Could not read the generated image.");return response.blob();});
    const id=crypto.randomUUID(),key=promptKey(preview.prompt),name=fileName(preview.prompt);
-   const record:AssetRecord={id,name,type:preview.assetType,size:blob.size,updated:Date.now(),blob,prompt:preview.prompt,promptKey:key,source:"workers-ai",model:preview.model};
+   const record:AssetRecord={id,name,type:preview.assetType,size:blob.size,updated:Date.now(),lastAccessed:Date.now(),pinned:false,blob,prompt:preview.prompt,promptKey:key,source:"workers-ai",model:preview.model};
    await saveAsset(record);
    let catalogueMessage="Saved on this device. ";
    try{await assetApi.register({id,name,assetType:preview.assetType,prompt:preview.prompt,promptKey:key,mimeType:blob.type||preview.mimeType,sizeBytes:blob.size,source:"workers-ai",model:preview.model,license:"Subject to the model provider's current terms"});catalogueMessage+="Metadata indexed in the NEXUS cloud catalogue.";}
