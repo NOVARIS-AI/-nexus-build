@@ -338,6 +338,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(48,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
    const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim(),category=url.searchParams.get("category")??"All";
    const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
+   const categoryFamilies:Record<string,string>={"Animals":"animal","Creatures & monsters":"creature","Fantasy species":"fantasy","Robots & androids":"robot","Anthropomorphic":"anthropomorphic","Aliens & hybrids":"alien"};
    // Describe mode expands everyday wording into the catalogue's indexed NPC vocabulary.
    const describe=url.searchParams.get("mode")==="describe";
    const rawTokens=term.toLowerCase().match(/[\\p{L}\\p{N}_]+/gu)??[];
