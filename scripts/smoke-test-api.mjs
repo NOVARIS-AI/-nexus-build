@@ -12,8 +12,25 @@ if (!health.response.ok || health.body?.ok !== true || health.body?.databaseRead
 }
 
 const npcCatalogue = await readJson("/api/npcs?limit=3");
-if (!npcCatalogue.response.ok || !Array.isArray(npcCatalogue.body?.npcs) || npcCatalogue.body.npcs.length === 0 || Number(npcCatalogue.body.total) < 1200 || npcCatalogue.body.source !== "cloudflare-d1") {
+if (!npcCatalogue.response.ok || !Array.isArray(npcCatalogue.body?.npcs) || npcCatalogue.body.npcs.length === 0 || Number(npcCatalogue.body.total) < 1600 || npcCatalogue.body.source !== "cloudflare-d1") {
   throw new Error(`NPC catalogue check failed (${npcCatalogue.response.status}): ${JSON.stringify(npcCatalogue.body)}`);
+}
+
+const characterFamilies = ["Animals", "Creatures & monsters", "Fantasy species", "Robots & androids", "Anthropomorphic", "Aliens & hybrids"];
+let expandedCharacterCount = 0;
+for (const family of characterFamilies) {
+  const result = await readJson("/api/npcs?limit=1&category=" + encodeURIComponent(family));
+  if (!result.response.ok || !Array.isArray(result.body?.npcs) || Number(result.body?.total) < 1) {
+    throw new Error(`Character family catalogue check failed for ${family} (${result.response.status}): ${JSON.stringify(result.body)}`);
+  }
+  expandedCharacterCount += Number(result.body.total);
+  const character = result.body.npcs[0];
+  if (!character.character_family || !character.species || !character.visual_style || !character.asset_status) {
+    throw new Error(`Character metadata is incomplete for ${family}: ${JSON.stringify(character)}`);
+  }
+}
+if (expandedCharacterCount < 900) {
+  throw new Error(`Expected at least 900 expanded non-human character entries, found ${expandedCharacterCount}.`);
 }
 
 const assetCatalogue = await readJson("/api/assets?limit=3");
@@ -45,6 +62,7 @@ for (const [label, path, init] of [
   ["2D asset generation", "/api/assets/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed fantasy stone texture for a game wall." }) }],
   ["3D asset generation", "/api/assets/generate-3d", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed low-poly wooden treasure chest." }) }],
   ["NPC generation", "/api/npcs/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ description: "A friendly shopkeeper in a busy market." }) }],
+  ["character design save", "/api/npcs/character-smoke-test/character", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ design: { characterFamily: "animal", species: "Fox", visualStyle: "anime" } }) }],
   ["world generation", "/api/world/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A small village with homes, roads and trees.", biome: "village", size: "compact" }) }],
   ["AI Director revision history", "/api/director/revisions"],
   ["AI Director revision save", "/api/director/revisions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ blueprint: {} }) }],
@@ -58,4 +76,4 @@ for (const [label, path, init] of [
 
 console.log("Protected task and generation endpoints correctly reject unauthenticated requests.");
 
-console.log("API smoke tests passed: health, NPC catalogue, searchable asset metadata, owner-scoped cloud asset upload/download/delete authentication, revision-history authentication, project authentication, persistent tasks and generated world scene.");
+console.log("API smoke tests passed: health, expanded character-family catalogue and metadata, searchable asset metadata, owner-scoped cloud asset upload/download/delete authentication, revision-history authentication, project authentication, persistent tasks and generated world scene.");
