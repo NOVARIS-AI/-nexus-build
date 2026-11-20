@@ -18,8 +18,8 @@ const navigation: { id: Page; label: string; icon: string; group: string }[] = [
   { id: "director", label: "AI Director", icon: "✦", group: "WORKSPACE" },
   { id: "projects", label: "My Projects", icon: "▦", group: "WORKSPACE" },
   { id: "world", label: "World Editor", icon: "◇", group: "CREATE" },
-  { id: "npcs", label: "NPC Studio", icon: "♙", group: "CREATE" },
-  { id: "library", label: "NPC Library", icon: "▤", group: "CREATE" },
+  { id: "npcs", label: "Character Studio", icon: "♙", group: "CREATE" },
+  { id: "library", label: "Character Library", icon: "▤", group: "CREATE" },
   { id: "gameplay", label: "Gameplay", icon: "▶", group: "CREATE" },
   { id: "tools", label: "Toolchain", icon: "⌘", group: "CREATE" },
   { id: "2d", label: "2D Studio", icon: "▧", group: "CREATE" },
@@ -30,8 +30,8 @@ const pageMeta: Record<Page, { title: string; subtitle: string; eyebrow: string 
   director: { title: "AI Game Director", subtitle: "Describe the experience you want to create and shape its game plan.", eyebrow: "IDEA TO GAME PLAN" },
   projects: { title: "Your projects", subtitle: "Create, reopen and manage your saved game projects.", eyebrow: "PROJECT WORKSPACE" },
   world: { title: "World Editor", subtitle: "Build your environment, place objects and shape the world in 3D.", eyebrow: "SCENE DESIGN" },
-  npcs: { title: "NPC Studio", subtitle: "Create, customise and import reusable characters for your game worlds.", eyebrow: "CHARACTER WORKSHOP" },
-  library: { title: "NPC Library", subtitle: "Browse the full resident index, search by name or role, and filter the catalogue by category.", eyebrow: "CHARACTER INDEX" },
+  npcs: { title: "Character Studio", subtitle: "Create and customise original humanoid, animal, creature, robot and fantasy character designs.", eyebrow: "UNIVERSAL CHARACTER WORKSHOP" },
+  library: { title: "Character Library", subtitle: "Explore an expandable library of character families, species, templates and hybrid visual styles.", eyebrow: "EXPANDABLE CHARACTER DATABASE" },
   gameplay: { title: "Gameplay Lab", subtitle: "Playtest your world, tune missions and manage resident behaviour.", eyebrow: "RUNTIME & SIMULATION" },
   tools: { title: "Production Toolchain", subtitle: "Manage assets, scripts, visual logic and connected creator tools.", eyebrow: "CREATOR UTILITIES" },
   "2d": { title: "2D Game Studio", subtitle: "Design a 2D scene, arrange game objects and test a simple playable prototype.", eyebrow: "2D GAME CREATION" },
@@ -57,7 +57,7 @@ export default function App() {
       return <div className="dashboard-grid">
         <button className="dashboard-feature" onClick={() => setPage("director")}><span className="dashboard-feature-icon">✦</span><span><b>Start with an idea</b><small>Open the AI Game Director and plan your next game.</small></span><i>↗</i></button>
         <button className="dashboard-feature" onClick={() => setPage("world")}><span className="dashboard-feature-icon">◇</span><span><b>Build a world</b><small>Open the 3D editor and shape your scene.</small></span><i>↗</i></button>
-        <button className="dashboard-feature" onClick={() => setPage("npcs")}><span className="dashboard-feature-icon">♙</span><span><b>Create characters</b><small>Design and organise NPCs for your worlds.</small></span><i>↗</i></button>
+        <button className="dashboard-feature" onClick={() => setPage("npcs")}><span className="dashboard-feature-icon">♙</span><span><b>Create characters</b><small>Design and organise reusable characters for your worlds.</small></span><i>↗</i></button>
         <button className="dashboard-feature" onClick={() => setPage("gameplay")}><span className="dashboard-feature-icon">▶</span><span><b>Test your game</b><small>Launch the runtime and try your world.</small></span><i>↗</i></button>
         <div className="dashboard-status"><div><span className="eyebrow">CURRENT WORKSPACE</span><b>{currentProject?.name || "No project selected"}</b><small>{currentProject ? "Your selected project is ready to edit." : "Open My Projects to create or select a project."}</small></div><button className="build-btn" onClick={() => setPage("projects")}>Open projects ↗</button></div>
         <div className="roadmap"><div><span className="road-icon">01</span><div><b>Prompt → Game plan</b><small>Prompt capture foundation</small></div><span className="state done">FOUNDATION</span></div><div><span className="road-icon">02</span><div><b>World & asset pipeline</b><small>Interactive procedural scene editor</small></div><span className="state">IN PROGRESS</span></div><div><span className="road-icon">03</span><div><b>Playable game runtime</b><small>Godot integration planned</small></div><span className="state">PLANNED</span></div></div>
