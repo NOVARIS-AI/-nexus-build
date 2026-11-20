@@ -67,17 +67,22 @@ export default function CharacterTemplateStudio({ selectedNpc }: { selectedNpc: 
   const [message, setMessage] = useState("Customise this original character template. A reference image guides your design; it is not copied automatically.");
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const update = (field: keyof DesignDraft, value: string) => setDraft(current => ({ ...current, [field]: value }));
 
   const save = async () => {
     setSaving(true);
     try {
       localStorage.setItem(key, JSON.stringify(draft));
-      try {
-        await npcApi.saveDesign(selectedNpc.id, draft as unknown as Record<string, unknown>);
-        setMessage("Design saved on this device and synced to the character catalogue.");
-      } catch {
-        setMessage("Design saved on this device. Cloud sync needs your signed-in Cloudflare Access session.");
+      if (selectedNpc.id.startsWith("local-character-")) {
+        setMessage("Design saved on this device. This scratch character has not been added to the shared catalogue.");
+      } else {
+        try {
+          await npcApi.saveDesign(selectedNpc.id, draft as unknown as Record<string, unknown>);
+          setMessage("Design saved on this device and synced to the character catalogue.");
+        } catch {
+          setMessage("Design saved on this device. Cloud sync is unavailable until the catalogue accepts your signed-in session.");
+        }
       }
     } catch {
       setMessage("Could not save locally. Remove the reference image if browser storage is full.");
@@ -143,7 +148,7 @@ export default function CharacterTemplateStudio({ selectedNpc }: { selectedNpc: 
         <div className="npc-colour-group"><b>Material and palette direction</b><div className="npc-colour-row"><label>Primary<input type="color" value={draft.primaryColor} onChange={event => update("primaryColor", event.target.value)}/></label><label>Secondary<input type="color" value={draft.secondaryColor} onChange={event => update("secondaryColor", event.target.value)}/></label><label>Accent<input type="color" value={draft.accentColor} onChange={event => update("accentColor", event.target.value)}/></label></div></div>
         <label className="npc-field">Silhouette & proportions<textarea rows={3} value={draft.silhouetteNotes} onChange={event => update("silhouetteNotes", event.target.value)} maxLength={1200}/></label>
         <label className="npc-field">Materials, features & accessories<textarea rows={3} value={draft.detailNotes} onChange={event => update("detailNotes", event.target.value)} maxLength={1600}/></label>
-        <div className="npc-editor-actions"><button type="button" className="npc-apply-button" onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save character design"}</button><button type="button" className="npc-reset-button" onClick={exportDesign}>Export JSON pack</button></div>
+        <div className="npc-editor-actions"><button type="button" className="npc-apply-button" onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save character design"}</button><button type="button" className="npc-reset-button" onClick={exportDesign}>Export JSON pack</button><button type="button" className="npc-reset-button" onClick={() => importFileRef.current?.click()}>Import JSON pack</button><input ref={importFileRef} hidden type="file" accept="application/json,.json" onChange={event => importDesign(event.target.files?.[0])}/></div>
         <p className="npc-editor-message" role="status">{message}</p>
       </aside>
     </div>
