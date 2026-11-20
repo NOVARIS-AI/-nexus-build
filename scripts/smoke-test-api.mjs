@@ -33,6 +33,13 @@ if (expandedCharacterCount < 900) {
   throw new Error(`Expected at least 900 expanded non-human character entries, found ${expandedCharacterCount}.`);
 }
 
+for (const [label, path] of [["species search", "/api/npcs?limit=1&q=fox&category=Animals"], ["visual style search", "/api/npcs?limit=1&q=anime"]]) {
+  const result = await readJson(path);
+  if (!result.response.ok || !Array.isArray(result.body?.npcs) || Number(result.body?.total) < 1) {
+    throw new Error(`Character ${label} failed (${result.response.status}): ${JSON.stringify(result.body)}`);
+  }
+}
+
 const assetCatalogue = await readJson("/api/assets?limit=3");
 if (!assetCatalogue.response.ok || !Array.isArray(assetCatalogue.body?.assets) || assetCatalogue.body.source !== "cloudflare-d1-metadata") {
   throw new Error(`Asset catalogue check failed (${assetCatalogue.response.status}): ${JSON.stringify(assetCatalogue.body)}`);
