@@ -619,3 +619,7 @@
 .core-refinement textarea:focus{border-color:#c3946a}
 .core-refinement button{justify-self:start}
 @media(max-width:700px){.core-refinement button{width:100%}}
+
+
+/* AI Director · expanded design and delivery plan */
+.core-refinement select{width:100%;padding:10px;border:1px solid #403a44;border-radius:8px;background:#242129;color:#e6dfe9;font:11px "DM Sans"}.blueprint-expansion{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:15px}.blueprint-expansion>div{min-width:0;padding:13px;border:1px solid #3c3540;border-radius:8px;background:#17161c}.blueprint-expansion b{display:block;margin-bottom:8px;color:#e4b47e;font:600 10px "Space Grotesk"}.blueprint-expansion p{margin:7px 0;color:#aaa3ad;font-size:9px;line-height:1.5}.blueprint-expansion article{padding:8px 0;border-top:1px solid #302d35}.blueprint-expansion strong{font-size:9px;color:#eee}.blueprint-expansion article small{display:block;margin-top:5px;color:#9d929d;font-size:8px;line-height:1.5}@media(max-width:700px){.blueprint-expansion{grid-template-columns:1fr}}
