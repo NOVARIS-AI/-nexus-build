@@ -50,9 +50,7 @@ export default function ToolchainStudio(){
  const generated=nodes.map(n=>`// ${n.event}
 if (event.type === "${n.event}") {
   game.${n.action}(${JSON.stringify(n.target)});
-}`).join("
-
-");
+}`).join("\n\n");
  const runChecks=()=>{const errors:string[]=[];if(!code.trim())errors.push("Gameplay script is empty.");if((code.match(/{/g)||[]).length!==(code.match(/}/g)||[]).length)errors.push("Unbalanced curly braces in script.");if((code.match(/\(/g)||[]).length!==(code.match(/\)/g)||[]).length)errors.push("Unbalanced parentheses in script.");setTestMessage(errors.length?errors.join(" "):"Basic text checks passed. This does not execute or fully compile the script.");};
  return <section className="toolchain">
   <div className="toolchain-head"><div><div className="eyebrow">DEVELOPMENT TOOLCHAIN</div><h2>Build workspace</h2><p>Assets, scripts, visual gameplay events, audio and external tool connections.</p></div><span className="toolchain-count">LOCAL-FIRST · FREE</span></div>
