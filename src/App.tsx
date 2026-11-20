@@ -69,8 +69,7 @@ export default function App() {
     if (page === "npcs") return <NPCLibrary selectedNpc={selectedNpc} onBack={() => setPage("library")}/>;
     if (page === "library") return <PopulationLibrary onPreview={npc => { setSelectedNpc(npc); setPage("npcs"); }}/>;
     if (page === "gameplay") return <GameplayStudio project={currentProject} onProjectUpdated={setCurrentProject}/>;
-    if (page === "2d") return <TwoDStudio project={currentProject}/>;
-    return <ToolchainStudio project={currentProject}/>;
+    return <ToolchainStudio/>;
   };
 
   return <main className="shell">
