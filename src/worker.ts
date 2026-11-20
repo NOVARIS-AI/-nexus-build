@@ -46,10 +46,15 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   const assetFileId=/^[a-zA-Z0-9_-]{1,100}$/.test(assetFilePath)?assetFilePath:"";
   const assetFileMatch=assetFileId?[url.pathname,assetFileId]:null;
   const isAssetFileRoute=Boolean(assetFileMatch);
+  const assetVersionPath=url.pathname.startsWith("/api/assets/")?url.pathname.slice("/api/assets/".length):"";
+  const assetVersionParts=assetVersionPath.split("/");
+  const assetVersionId=assetVersionParts.length===2&&assetVersionParts[1]==="versions"&&/^[a-zA-Z0-9_-]{1,100}$/.test(assetVersionParts[0])?assetVersionParts[0]:"";
+  const isAssetVersionRoute=Boolean(assetVersionId);
  const isProtectedWrite=
   (url.pathname==="/api/assets/register"&&request.method==="POST")||
   (url.pathname==="/api/assets/upload"&&request.method==="POST")||
   (isAssetFileRoute&&request.method==="DELETE")||
+  (isAssetVersionRoute&&request.method==="GET")||
   (url.pathname==="/api/assets/generate"&&request.method==="POST")||
   (url.pathname==="/api/assets/generate-3d"&&request.method==="POST")||
   (url.pathname==="/api/npcs/generate"&&request.method==="POST")||
@@ -57,7 +62,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   (url.pathname==="/api/director/plan"&&request.method==="POST")||
   (url.pathname==="/api/director/revisions"&&request.method==="POST")||
   (url.pathname.startsWith("/api/npcs/")&&url.pathname.endsWith("/character")&&request.method==="PUT");
- if(isProjectRoute||isTaskRoute||isProtectedWrite||isDirectorRevisionRoute||isAssetFileRoute){
+ if(isProjectRoute||isTaskRoute||isProtectedWrite||isDirectorRevisionRoute||isAssetFileRoute||isAssetVersionRoute){
   if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Cloudflare Access authentication is not configured."},503);
   const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
   if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
@@ -96,6 +101,14 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const total=count?.total??0,loaded=rows.results?.length??0;
    return json({assets:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1-metadata"});
   }catch(error){return json({error:error instanceof Error?error.message:"Asset catalogue unavailable."},503);}
+ }
+ if(isAssetVersionRoute&&request.method==="GET"){
+  try{
+   const asset=await env.DB.prepare("SELECT id FROM asset_catalogue WHERE id=? AND owner_id=?").bind(assetVersionId,userSubject).first<{id:string}>();
+   if(!asset)return json({error:"Asset not found for this account."},404);
+   const rows=await env.DB.prepare("SELECT version_id,name,asset_type,mime_type,size_bytes,source,model,license,created_at FROM asset_versions WHERE asset_id=? AND owner_id=? ORDER BY version_id DESC LIMIT 30").bind(assetVersionId,userSubject).all();
+   return json({versions:rows.results??[],source:"cloudflare-d1-version-history"});
+  }catch{return json({error:"Asset version history is unavailable."},503);}
  }
  if(isAssetFileRoute&&request.method==="GET"){
   if(!env.ASSET_BUCKET)return json({error:"Cloud asset storage is not configured yet. Add the ASSET_BUCKET R2 binding."},503);
@@ -142,12 +155,14 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const idValue=(body.id??"").trim(),name=(body.name??"").trim(),assetType=(body.assetType??"").trim();
    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(idValue)||!name||name.length>140||!assetType||assetType.length>40)return json({error:"Asset ID, name and type are required."},400);
    const prompt=(body.prompt??"").trim().slice(0,2048),promptKey=(body.promptKey??"").trim().slice(0,260),mimeType=(body.mimeType??"application/octet-stream").slice(0,100);
-   const sizeBytes=Number.isFinite(body.sizeBytes)?Math.max(0,Math.min(100*1024*1024,Math.floor(body.sizeBytes as number))):0;
+   if(body.sizeBytes!==undefined&&(!Number.isFinite(body.sizeBytes)||Number(body.sizeBytes)<0||Number(body.sizeBytes)>25*1024*1024))return json({error:"Asset metadata size must be between 0 and 25 MB."},413);
+   if(!/^[a-zA-Z0-9!#   const sizeBytes=Number.isFinite(body.sizeBytes)?Math.max(0,Math.min(100*1024*1024,Math.floor(body.sizeBytes as number))):0;^_.+-]+\\/[a-zA-Z0-9!#   const sizeBytes=Number.isFinite(body.sizeBytes)?Math.max(0,Math.min(100*1024*1024,Math.floor(body.sizeBytes as number))):0;^_.+-]+$/.test(mimeType))return json({error:"Asset MIME type is invalid."},400);
+   const sizeBytes=body.sizeBytes===undefined?0:Math.floor(Number(body.sizeBytes));
    const source=body.source==="workers-ai"?"workers-ai":"imported",model=(body.model??"").slice(0,120),license=(body.license??"user-supplied-or-model-terms").slice(0,160);
    const tags=Array.isArray(body.tags)?body.tags.filter((tag):tag is string=>typeof tag==="string").slice(0,24):[];
    const timestamp=now();
-   const saved=await env.DB.prepare("INSERT INTO asset_catalogue (id,owner_id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,asset_type=excluded.asset_type,prompt=excluded.prompt,prompt_key=excluded.prompt_key,mime_type=excluded.mime_type,size_bytes=excluded.size_bytes,source=excluded.source,model=excluded.model,license=excluded.license,tags_json=excluded.tags_json,updated_at=excluded.updated_at WHERE asset_catalogue.owner_id=excluded.owner_id").bind(idValue,userSubject,name,assetType,prompt,promptKey,mimeType,sizeBytes,source,model,license,JSON.stringify(tags),timestamp,timestamp).run();
-   if(!saved.meta?.changes)return json({error:"This asset ID is already owned by another catalogue entry. Choose a new ID."},409);
+   const saved=await env.DB.batch([env.DB.prepare("INSERT INTO asset_versions (asset_id,owner_id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,storage_backend,storage_key,created_at) SELECT id,owner_id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,storage_backend,storage_key,? FROM asset_catalogue WHERE id=? AND owner_id=?").bind(timestamp,idValue,userSubject),env.DB.prepare("INSERT INTO asset_catalogue (id,owner_id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,asset_type=excluded.asset_type,prompt=excluded.prompt,prompt_key=excluded.prompt_key,mime_type=excluded.mime_type,size_bytes=excluded.size_bytes,source=excluded.source,model=excluded.model,license=excluded.license,tags_json=excluded.tags_json,updated_at=excluded.updated_at WHERE asset_catalogue.owner_id=excluded.owner_id").bind(idValue,userSubject,name,assetType,prompt,promptKey,mimeType,sizeBytes,source,model,license,JSON.stringify(tags),timestamp,timestamp)]);
+   if(!saved[1]?.meta?.changes)return json({error:"This asset ID is already owned by another catalogue entry. Choose a new ID."},409);
    return json({saved:true,id:idValue,source:"cloudflare-d1-metadata"},201);
   }catch(error){return json({error:error instanceof Error?error.message:"Could not register asset metadata."},503);}
  }

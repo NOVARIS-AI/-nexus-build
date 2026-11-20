@@ -60,6 +60,7 @@ export const assetApi={
  register:(asset:{id:string;name:string;assetType:string;prompt?:string;promptKey?:string;mimeType:string;sizeBytes:number;source:"imported"|"workers-ai";model?:string;license?:string;tags?:string[]})=>
   request<{saved:boolean;id:string;source:string}>("/api/assets/register",{method:"POST",body:JSON.stringify(asset)}),
  upload:async(id:string,file:File)=>{const form=new FormData();form.set("id",id);form.set("file",file);const response=await fetch("/api/assets/upload",{method:"POST",body:form});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error??`Upload failed (${response.status})`);return data as {uploaded:boolean;id:string;storage:string;sizeBytes:number};},
+ versions:(id:string)=>request<{versions:{version_id:number;name:string;asset_type:string;mime_type:string;size_bytes:number;source:string;model:string;license:string;created_at:string}[];source:string}>("/api/assets/"+encodeURIComponent(id)+"/versions"),
  removeCloudFile:(id:string)=>request<{deleted:boolean;id:string}>("/api/assets/file/"+encodeURIComponent(id),{method:"DELETE"}),
  fileUrl:(id:string)=>"/api/assets/file/"+encodeURIComponent(id)
 };

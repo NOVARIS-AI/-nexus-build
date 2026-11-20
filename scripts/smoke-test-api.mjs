@@ -40,6 +40,7 @@ for (const [label, path, init] of [
   ["asset upload", "/api/assets/upload", { method: "POST" }],
   ["asset file download", "/api/assets/file/smoke-test"],
   ["asset file deletion", "/api/assets/file/smoke-test", { method: "DELETE" }],
+  ["asset version history", "/api/assets/smoke-test/versions"],
   ["asset registration", "/api/assets/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: "anonymous-test", name: "Anonymous", assetType: "Texture" }) }],
   ["2D asset generation", "/api/assets/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed fantasy stone texture for a game wall." }) }],
   ["3D asset generation", "/api/assets/generate-3d", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed low-poly wooden treasure chest." }) }],
