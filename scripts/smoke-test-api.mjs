@@ -42,6 +42,22 @@ for (const [label, path, init] of [
     throw new Error(`Unauthenticated ${label} was not blocked (${result.response.status}): ${JSON.stringify(result.body)}`);
   }
 }
+for (const [label, path, init] of [
+  ["task listing", "/api/tasks"],
+  ["task creation", "/api/tasks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "anonymous-test", input: "This should be blocked.", engine: "auto" }) }],
+  ["asset registration", "/api/assets/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: "anonymous-test", name: "Anonymous", assetType: "Texture" }) }],
+  ["2D asset generation", "/api/assets/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed fantasy stone texture for a game wall." }) }],
+  ["3D asset generation", "/api/assets/generate-3d", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed low-poly wooden treasure chest." }) }],
+  ["NPC generation", "/api/npcs/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ description: "A friendly shopkeeper in a busy market." }) }],
+  ["world generation", "/api/world/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A small village with homes, roads and trees.", biome: "village", size: "compact" }) }],
+  ["AI Director planning", "/api/director/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A small exploration game with puzzles." }) }],
+]) {
+  const result = await readJson(path, init);
+  if (![401, 503].includes(result.response.status) || typeof result.body?.error !== "string") {
+    throw new Error(`Unauthenticated ${label} was not blocked (${result.response.status}): ${JSON.stringify(result.body)}`);
+  }
+}
+
 const taskCreate = await readJson("/api/tasks", {
   method: "POST",
   headers: { "content-type": "application/json" },
