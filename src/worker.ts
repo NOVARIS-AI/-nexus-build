@@ -318,11 +318,14 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
     const styles=["anime","realistic-3d","cartoon","stylized-3d","pixel-art"];
     const family=typeof design.characterFamily==="string"&&families.includes(design.characterFamily)?design.characterFamily:null;
     const style=typeof design.visualStyle==="string"&&styles.includes(design.visualStyle)?design.visualStyle:null;
+    const species=typeof design.species==="string"?design.species.trim().slice(0,80)||null:null;
+    const name=typeof design.name==="string"?design.name.trim().slice(0,80)||null:null;
     appearance.characterDesign=design;
     appearance.characterFamily=family??appearance.characterFamily;
+    appearance.species=species??appearance.species;
     appearance.visualStyle=style??appearance.visualStyle;
     appearance.designUpdatedAt=now();
-    await env.DB.prepare("UPDATE npc_profiles SET appearance_json=?,character_family=COALESCE(?,character_family),visual_style=COALESCE(?,visual_style),asset_status='design-template' WHERE id=?").bind(JSON.stringify(appearance),family,style,id).run();
+    await env.DB.prepare("UPDATE npc_profiles SET appearance_json=?,name=COALESCE(?,name),species=COALESCE(?,species),character_family=COALESCE(?,character_family),visual_style=COALESCE(?,visual_style),asset_status='design-template' WHERE id=?").bind(JSON.stringify(appearance),name,species,family,style,id).run();
    }else{
     appearance.humanConfig=body.config;
     appearance.humanConfigUpdatedAt=now();
