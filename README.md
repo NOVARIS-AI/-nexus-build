@@ -91,3 +91,16 @@ Saved project endpoints require a verified Cloudflare Access identity. The Worke
 Until both variables are configured and Access is enabled, project endpoints deliberately fail closed (503/401) rather than exposing shared projects. Existing rows are retained with the `legacy-unassigned` owner and are not visible to signed-in users until a deliberate ownership-recovery step is implemented.
 
 Do not expose the AUD secret in client-side code or commit it to Git.
+
+
+## Universal character library (expansion v1)
+
+The Character Library is an expandable character-building resource, not a fixed cast for one game. Migration `0013_character_library_expansion.sql` adds family, species, visual-style, asset-status and legacy-backup metadata to the NPC catalogue.
+
+On the first catalogue read after migration, the Worker preserves the original data for 500 existing seeded profiles in `legacy_profile_json` and their appearance metadata, then reclassifies those entries across animals, creatures/monsters, fantasy species, robots/androids, anthropomorphic characters and alien/hybrid characters. It adds 400 more original character design-template records. The first expansion therefore touches 900 catalogue entries; it does not impose a maximum on future additions.
+
+Supported visual-style metadata: anime, realistic 3D, cartoon, stylized 3D and pixel art. The Character Studio supports scratch designs, original reference-image guidance, template customization, palette and silhouette notes, and portable JSON design packs. Reference images are stored locally and are not uploaded with the shared design metadata.
+
+**Asset-status honesty:** the 900 expansion entries are catalogue/design templates, not 900 finished meshes, sprites, rigs, textures or animation sets. Human entries continue to use the existing HumanForge preview. Non-human entries open the universal design-template editor; production-ready 2D/3D asset generation, rigging, animation compatibility and reliable 2D/3D conversion remain separate pipeline work. The editor must not imply that a metadata template is already a finished visual asset.
+
+AI-assisted creation accepts the same non-human families and stores original design metadata. The catalogue is intentionally open-ended; growth is constrained by the database and available asset storage, not by a hard-coded character count.
