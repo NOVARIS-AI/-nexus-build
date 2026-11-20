@@ -156,7 +156,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(idValue)||!name||name.length>140||!assetType||assetType.length>40)return json({error:"Asset ID, name and type are required."},400);
    const prompt=(body.prompt??"").trim().slice(0,2048),promptKey=(body.promptKey??"").trim().slice(0,260),mimeType=(body.mimeType??"application/octet-stream").slice(0,100);
    if(body.sizeBytes!==undefined&&(!Number.isFinite(body.sizeBytes)||Number(body.sizeBytes)<0||Number(body.sizeBytes)>25*1024*1024))return json({error:"Asset metadata size must be between 0 and 25 MB."},413);
-   if(!/^[a-zA-Z0-9!#   const sizeBytes=Number.isFinite(body.sizeBytes)?Math.max(0,Math.min(100*1024*1024,Math.floor(body.sizeBytes as number))):0;^_.+-]+\\/[a-zA-Z0-9!#   const sizeBytes=Number.isFinite(body.sizeBytes)?Math.max(0,Math.min(100*1024*1024,Math.floor(body.sizeBytes as number))):0;^_.+-]+$/.test(mimeType))return json({error:"Asset MIME type is invalid."},400);
+    if(!/^[a-zA-Z0-9!#$&^_.+-]+\/[a-zA-Z0-9!#$&^_.+-]+$/.test(mimeType))return json({error:"Asset MIME type is invalid."},400);
    const sizeBytes=body.sizeBytes===undefined?0:Math.floor(Number(body.sizeBytes));
    const source=body.source==="workers-ai"?"workers-ai":"imported",model=(body.model??"").slice(0,120),license=(body.license??"user-supplied-or-model-terms").slice(0,160);
    const tags=Array.isArray(body.tags)?body.tags.filter((tag):tag is string=>typeof tag==="string").slice(0,24):[];
