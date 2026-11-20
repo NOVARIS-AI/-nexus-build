@@ -360,10 +360,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    let count:{total:number}|null;
    let rows:D1Result;
    if(ftsQuery){
-    const matchFrom=" FROM npc_profiles_fts JOIN npc_profiles p ON p.rowid=npc_profiles_fts.rowid WHERE (npc_profiles_fts MATCH ? OR p.species LIKE ? OR p.visual_style LIKE ? OR p.character_family LIKE ?)"+roleClause+familyClause;
+    const matchFrom=" FROM npc_profiles p WHERE (p.rowid IN (SELECT rowid FROM npc_profiles_fts WHERE npc_profiles_fts MATCH ?) OR p.species LIKE ? OR p.visual_style LIKE ? OR p.character_family LIKE ?)"+roleClause+familyClause;
     const searchArgs:(string|number)[]=[ftsQuery,"%"+term+"%","%"+term+"%","%"+term+"%",...filterArgs];
     count=await env.DB.prepare("SELECT COUNT(*) AS total"+matchFrom).bind(...searchArgs).first<{total:number}>();
-    rows=await env.DB.prepare("SELECT p.id,p.name,p.role,p.dialogue,p.x,p.z,p.radius,p.personality,p.routine,p.greeting,p.appearance_json,p.preview_url,p.model_url,p.character_family,p.species,p.visual_style,p.asset_status"+matchFrom+" ORDER BY bm25(npc_profiles_fts),p.id LIMIT ? OFFSET ?").bind(...searchArgs,limit,offset).all();
+    rows=await env.DB.prepare("SELECT p.id,p.name,p.role,p.dialogue,p.x,p.z,p.radius,p.personality,p.routine,p.greeting,p.appearance_json,p.preview_url,p.model_url,p.character_family,p.species,p.visual_style,p.asset_status"+matchFrom+" ORDER BY p.id LIMIT ? OFFSET ?").bind(...searchArgs,limit,offset).all();
    }else{
     const filters:string[]=[];
     if(selectedRoles)filters.push("role IN ("+selectedRoles.map(()=>"?").join(",")+")");
