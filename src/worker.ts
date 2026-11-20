@@ -34,14 +34,24 @@ const optionalText=(value:unknown,max:number)=>value===undefined||typeof value==
 export default { async fetch(request:Request,env:Env):Promise<Response>{
  const url=new URL(request.url);
  if(!url.pathname.startsWith("/api/"))return env.ASSETS.fetch(request);
+ if(request.method==="OPTIONS")return new Response(null,{status:204});
  let projectOwner: string | null = null;
- if(url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/")){
-  if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Project authentication is not configured yet."},503);
+ const isProjectRoute=url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/");
+ const isTaskRoute=url.pathname==="/api/tasks"||/^\\/api\\/tasks\\/[a-f0-9-]+$/i.test(url.pathname);
+ const isProtectedWrite=
+  (url.pathname==="/api/assets/register"&&request.method==="POST")||
+  (url.pathname==="/api/assets/generate"&&request.method==="POST")||
+  (url.pathname==="/api/assets/generate-3d"&&request.method==="POST")||
+  (url.pathname==="/api/npcs/generate"&&request.method==="POST")||
+  (url.pathname==="/api/world/generate"&&request.method==="POST")||
+  (url.pathname==="/api/director/plan"&&request.method==="POST")||
+  (/^\\/api\\/npcs\\/[a-zA-Z0-9_-]+\\/character$/.test(url.pathname)&&request.method==="PUT");
+ if(isProjectRoute||isTaskRoute||isProtectedWrite){
+  if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Cloudflare Access authentication is not configured."},503);
   const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
   if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
-  projectOwner=identity.subject;
+  if(isProjectRoute)projectOwner=identity.subject;
  }
- if(request.method==="OPTIONS")return new Response(null,{status:204});
  if(url.pathname==="/api/health"&&request.method==="GET"){
   try{
    const probe=await env.DB.prepare("SELECT 1 AS ok").first<{ok:number}>();
