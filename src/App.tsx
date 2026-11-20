@@ -2,6 +2,7 @@ import { useState } from "react";
 import ProjectManager from "./components/ProjectManager";
 import SceneEditor from "./components/SceneEditor";
 import ToolchainStudio from "./components/ToolchainStudio";
+import TwoDStudio from "./components/TwoDStudio";
 import GameplayStudio from "./components/GameplayStudio";
 import CoreFoundationStudio from "./components/CoreFoundationStudio";
 import NPCLibrary from "./components/NPCLibrary";
@@ -10,7 +11,7 @@ import PageErrorBoundary from "./components/PageErrorBoundary";
 import type { Project } from "./api";
 import type { PopulationNpc } from "./lib/npcPopulation";
 
-type Page = "home" | "director" | "projects" | "world" | "npcs" | "library" | "gameplay" | "tools";
+type Page = "home" | "director" | "projects" | "world" | "npcs" | "library" | "gameplay" | "tools" | "2d";
 
 const navigation: { id: Page; label: string; icon: string; group: string }[] = [
   { id: "home", label: "Overview", icon: "⌂", group: "WORKSPACE" },
@@ -21,6 +22,7 @@ const navigation: { id: Page; label: string; icon: string; group: string }[] = [
   { id: "library", label: "NPC Library", icon: "▤", group: "CREATE" },
   { id: "gameplay", label: "Gameplay", icon: "▶", group: "CREATE" },
   { id: "tools", label: "Toolchain", icon: "⌘", group: "CREATE" },
+  { id: "2d", label: "2D Studio", icon: "▧", group: "CREATE" },
 ];
 
 const pageMeta: Record<Page, { title: string; subtitle: string; eyebrow: string }> = {
@@ -32,6 +34,7 @@ const pageMeta: Record<Page, { title: string; subtitle: string; eyebrow: string 
   library: { title: "NPC Library", subtitle: "Browse the full resident index, search by name or role, and filter the catalogue by category.", eyebrow: "CHARACTER INDEX" },
   gameplay: { title: "Gameplay Lab", subtitle: "Playtest your world, tune missions and manage resident behaviour.", eyebrow: "RUNTIME & SIMULATION" },
   tools: { title: "Production Toolchain", subtitle: "Manage assets, scripts, visual logic and connected creator tools.", eyebrow: "CREATOR UTILITIES" },
+  "2d": { title: "2D Game Studio", subtitle: "Design a 2D scene, arrange game objects and test a simple playable prototype.", eyebrow: "2D GAME CREATION" },
 };
 
 const starterPrompts = [
