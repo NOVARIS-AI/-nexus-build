@@ -65,6 +65,12 @@ npm run preview
 
 The project targets open-source tools and free tiers. Free tiers have limits and can change. Unlimited hosted AI generation, cloud builds and hosting cannot be promised at a zero budget. Heavy local 3D processing may require a computer; the mobile-friendly web studio is being built first.
 
+## Asset catalogue ownership
+
+The starter asset catalogue remains globally readable for shared discovery. Creator registrations are stored with the verified Cloudflare Access subject, and signed-in catalogue reads return shared starter entries plus that creator's own entries. Anonymous catalogue reads only return shared starter entries. A registration cannot overwrite an entry owned by another creator; existing catalogue rows are retained as `legacy-shared`.
+
+The D1 catalogue stores asset metadata, not uploaded binary files. The browser IndexedDB library remains the local file store until the separate cloud object-storage pipeline is implemented.
+
 ## Generation task account isolation
 
 Generation tasks are also tied to the verified Cloudflare Access subject. Task lists only return the signed-in creator's tasks, task updates require both task ID and owner ID, and image/3D/world generation writes task records under the authenticated owner. Existing task rows are retained with `legacy-unassigned` ownership and are intentionally excluded from signed-in task lists; they are not automatically reassigned.
