@@ -37,6 +37,9 @@ for (const [label, path, init] of [
   ["asset catalogue invalid identity", "/api/assets?limit=3", { headers: { "Cf-Access-Jwt-Assertion": "invalid-test-token" } }],
   ["task listing", "/api/tasks"],
   ["task creation", "/api/tasks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "anonymous-test", input: "This should be blocked.", engine: "auto" }) }],
+  ["asset upload", "/api/assets/upload", { method: "POST" }],
+  ["asset file download", "/api/assets/file/smoke-test"],
+  ["asset file deletion", "/api/assets/file/smoke-test", { method: "DELETE" }],
   ["asset registration", "/api/assets/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: "anonymous-test", name: "Anonymous", assetType: "Texture" }) }],
   ["2D asset generation", "/api/assets/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed fantasy stone texture for a game wall." }) }],
   ["3D asset generation", "/api/assets/generate-3d", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed low-poly wooden treasure chest." }) }],
@@ -54,4 +57,4 @@ for (const [label, path, init] of [
 
 console.log("Protected task and generation endpoints correctly reject unauthenticated requests.");
 
-console.log("API smoke tests passed: health, NPC catalogue, searchable asset metadata, revision-history authentication, project authentication, persistent tasks and generated world scene.");
+console.log("API smoke tests passed: health, NPC catalogue, searchable asset metadata, owner-scoped cloud asset upload/download/delete authentication, revision-history authentication, project authentication, persistent tasks and generated world scene.");

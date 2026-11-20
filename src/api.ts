@@ -45,7 +45,7 @@ export const directorApi={
  saveRevision:async(blueprint:import("./lib/nexusCore").GameBlueprint,taskId="")=> (await request<{revision:BlueprintRevision}>("/api/director/revisions",{method:"POST",body:JSON.stringify({blueprint,taskId})})).revision
 };
 
-export type AssetCatalogueRecord={id:string;name:string;asset_type:string;prompt:string;prompt_key:string;mime_type:string;size_bytes:number;source:string;model:string;license:string;tags_json:string;created_at:string;updated_at:string};
+export type AssetCatalogueRecord={id:string;name:string;asset_type:string;prompt:string;prompt_key:string;mime_type:string;size_bytes:number;source:string;model:string;license:string;tags_json:string;storage_backend?:string|null;created_at:string;updated_at:string};
 export type GeneratedImageAsset={imageDataUrl:string;mimeType:string;model:string;taskId:string;assetType:string;source:string};
 export const assetApi={
  list:async(limit=24,offset=0,query="",type="")=>{
@@ -58,5 +58,8 @@ export const assetApi={
  generateImage:(prompt:string,assetType:"Texture"|"Concept art"|"Sprite"="Texture")=>
   request<GeneratedImageAsset>("/api/assets/generate",{method:"POST",body:JSON.stringify({prompt,assetType})}),
  register:(asset:{id:string;name:string;assetType:string;prompt?:string;promptKey?:string;mimeType:string;sizeBytes:number;source:"imported"|"workers-ai";model?:string;license?:string;tags?:string[]})=>
-  request<{saved:boolean;id:string;source:string}>("/api/assets/register",{method:"POST",body:JSON.stringify(asset)})
+  request<{saved:boolean;id:string;source:string}>("/api/assets/register",{method:"POST",body:JSON.stringify(asset)}),
+ upload:async(id:string,file:File)=>{const form=new FormData();form.set("id",id);form.set("file",file);const response=await fetch("/api/assets/upload",{method:"POST",body:form});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error??`Upload failed (${response.status})`);return data as {uploaded:boolean;id:string;storage:string;sizeBytes:number};},
+ removeCloudFile:(id:string)=>request<{deleted:boolean;id:string}>("/api/assets/file/"+encodeURIComponent(id),{method:"DELETE"}),
+ fileUrl:(id:string)=>"/api/assets/file/"+encodeURIComponent(id)
 };

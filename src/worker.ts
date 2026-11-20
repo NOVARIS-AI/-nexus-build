@@ -5,7 +5,9 @@ interface D1Result<T = Record<string, unknown>> { results?: T[]; success: boolea
 interface D1Statement { bind(...values: unknown[]): D1Statement; first<T = Record<string, unknown>>(): Promise<T | null>; all<T = Record<string, unknown>>(): Promise<D1Result<T>>; run(): Promise<D1Result>; }
 interface D1Database { prepare(query: string): D1Statement; batch(statements: D1Statement[]): Promise<D1Result[]>; }
 interface WorkersAI { run(model:string,input:Record<string,unknown>):Promise<{response?:string;image?:string}>; }
-interface Env { DB: D1Database; AI: WorkersAI; ASSETS: { fetch(request: Request): Promise<Response> }; ACCESS_TEAM_DOMAIN?: string; ACCESS_AUD?: string; }
+interface R2AssetObject { body: ReadableStream<Uint8Array>; httpMetadata?: { contentType?: string }; }
+interface R2AssetBucket { put(key:string,value:ArrayBuffer,options?:{httpMetadata?:{contentType?:string};customMetadata?:Record<string,string>}):Promise<unknown>; get(key:string):Promise<R2AssetObject|null>; delete(key:string):Promise<void>; }
+interface Env { DB: D1Database; AI: WorkersAI; ASSETS: { fetch(request: Request): Promise<Response> }; ASSET_BUCKET?: R2AssetBucket; ACCESS_TEAM_DOMAIN?: string; ACCESS_AUD?: string; }
 const firstNames=["Amina","Ayo","Bisi","Chika","Dami","Efe","Emeka","Faruq","Fola","Hadiza","Ife","Ikenna","Jide","Kelechi","Lara","Mariam","Nneka","Obinna","Ola","Olu","Onyeka","Sade","Tari","Tobi","Uche","Zainab","Ada","Boma","Chinwe","David","Ejiro","Farida","Gbenga","Hauwa","Ini","Jumoke","Kemi","Lekan","Moyo","Ngozi","Oghene","Rita","Seyi","Temi","Umar","Yemi","Zara","Abiola","Blessing","Chinedu","Daniel","Esther","Femi","Grace","Ibrahim","Joy","Kunle","Musa","Nana","Peter","Samuel","Tunde"];
 const surnames=["Adebayo","Adeyemi","Afolabi","Agu","Akande","Anyanwu","Balogun","Bello","Chukwu","Danjuma","Eze","Ezeani","Falana","Garba","Ibrahim","Idris","Iheanacho","Johnson","Kalu","Lawal","Musa","Nwosu","Obi","Okafor","Okeke","Okoro","Oladipo","Olawale","Osei","Sani","Soyinka","Udo","Usman","Yakubu","Yusuf","Abubakar","Akinyemi","Bakare","Duru","Etim","Iroko","Jatau","Kehinde","Mordi","Nwachukwu","Ojo","Oni","Salami"];
 const roles=["Shopkeeper","Teacher","Student","Nurse","Doctor","Mechanic","Bus driver","Food vendor","Tailor","Artist","Musician","Farmer","Security officer","Cleaner","Engineer","Photographer","Hair stylist","Barber","Electrician","Plumber","Delivery rider","Market trader","Chef","Builder","Librarian","Journalist","Designer","Gardener","Receptionist","Community volunteer"];
@@ -40,8 +42,12 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  const isProjectRoute=url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/");
  const isTaskRoute=url.pathname==="/api/tasks"||url.pathname.startsWith("/api/tasks/");
  const isDirectorRevisionRoute=url.pathname==="/api/director/revisions";
+ const assetFileMatch=url.pathname.match(/^\\/api\\/assets\\/file\\/([a-zA-Z0-9_-]{1,100})$/);
+ const isAssetFileRoute=Boolean(assetFileMatch);
  const isProtectedWrite=
   (url.pathname==="/api/assets/register"&&request.method==="POST")||
+  (url.pathname==="/api/assets/upload"&&request.method==="POST")||
+  (isAssetFileRoute&&request.method==="DELETE")||
   (url.pathname==="/api/assets/generate"&&request.method==="POST")||
   (url.pathname==="/api/assets/generate-3d"&&request.method==="POST")||
   (url.pathname==="/api/npcs/generate"&&request.method==="POST")||
@@ -49,7 +55,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   (url.pathname==="/api/director/plan"&&request.method==="POST")||
   (url.pathname==="/api/director/revisions"&&request.method==="POST")||
   (url.pathname.startsWith("/api/npcs/")&&url.pathname.endsWith("/character")&&request.method==="PUT");
- if(isProjectRoute||isTaskRoute||isProtectedWrite||isDirectorRevisionRoute){
+ if(isProjectRoute||isTaskRoute||isProtectedWrite||isDirectorRevisionRoute||isAssetFileRoute){
   if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Cloudflare Access authentication is not configured."},503);
   const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
   if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
@@ -84,10 +90,48 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    if(type){clauses.push("asset_type = ?");args.push(type);}
    const where=" WHERE "+clauses.join(" AND ");
    const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM asset_catalogue"+where).bind(...args).first<{total:number}>();
-   const rows=await env.DB.prepare("SELECT id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at FROM asset_catalogue"+where+" ORDER BY updated_at DESC LIMIT ? OFFSET ?").bind(...args,limit,offset).all();
+   const rows=await env.DB.prepare("SELECT id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,storage_backend,created_at,updated_at FROM asset_catalogue"+where+" ORDER BY updated_at DESC LIMIT ? OFFSET ?").bind(...args,limit,offset).all();
    const total=count?.total??0,loaded=rows.results?.length??0;
    return json({assets:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1-metadata"});
   }catch(error){return json({error:error instanceof Error?error.message:"Asset catalogue unavailable."},503);}
+ }
+ if(isAssetFileRoute&&request.method==="GET"){
+  if(!env.ASSET_BUCKET)return json({error:"Cloud asset storage is not configured yet. Add the ASSET_BUCKET R2 binding."},503);
+  try{
+   const id=assetFileMatch?.[1]??"";
+   const record=await env.DB.prepare("SELECT name,mime_type,storage_backend,storage_key FROM asset_catalogue WHERE id=? AND owner_id=?").bind(id,userSubject).first<{name:string;mime_type:string;storage_backend:string|null;storage_key:string|null}>();
+   if(!record||record.storage_backend!=="r2"||!record.storage_key)return json({error:"Cloud asset file not found for this account."},404);
+   const object=await env.ASSET_BUCKET.get(record.storage_key);if(!object)return json({error:"Cloud asset binary is missing."},404);
+   const safeName=record.name.replace(/[\\r\\n"]/g,"_").slice(0,140);
+   return new Response(object.body,{headers:{"content-type":object.httpMetadata?.contentType??record.mime_type??"application/octet-stream","content-disposition":"attachment; filename*=UTF-8''"+encodeURIComponent(safeName),"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
+  }catch{return json({error:"Could not retrieve cloud asset."},503);}
+ }
+ if(url.pathname==="/api/assets/upload"&&request.method==="POST"){
+  if(!env.ASSET_BUCKET)return json({error:"Cloud asset storage is not configured yet. Create the R2 bucket and add the ASSET_BUCKET binding."},503);
+  let form:FormData;try{form=await request.formData();}catch{return json({error:"Send a multipart asset file."},400);}
+  const id=String(form.get("id")??""),file=form.get("file");
+  if(!/^[a-zA-Z0-9_-]{1,100}$/.test(id)||!(file instanceof File))return json({error:"A valid asset ID and file are required."},400);
+  if(file.size<1||file.size>25*1024*1024)return json({error:"Cloud uploads must be between 1 byte and 25 MB per file."},413);
+  try{
+   const owned=await env.DB.prepare("SELECT id FROM asset_catalogue WHERE id=? AND owner_id=?").bind(id,userSubject).first<{id:string}>();
+   if(!owned)return json({error:"Register this asset to your account before uploading its file."},404);
+   const key="creator-assets/"+encodeURIComponent(userSubject??"")+"/"+id;
+   await env.ASSET_BUCKET.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:file.type||"application/octet-stream"},customMetadata:{owner:userSubject??"",originalName:file.name.slice(0,140)}});
+   const updated=await env.DB.prepare("UPDATE asset_catalogue SET storage_backend='r2',storage_key=?,size_bytes=?,mime_type=?,updated_at=? WHERE id=? AND owner_id=?").bind(key,file.size,file.type||"application/octet-stream",now(),id,userSubject).run();
+   if(!updated.meta?.changes){await env.ASSET_BUCKET.delete(key);return json({error:"Asset metadata could not be updated for this account."},409);}
+   return json({uploaded:true,id,storage:"cloudflare-r2",sizeBytes:file.size});
+  }catch{return json({error:"Cloud asset upload failed. Check the R2 binding and try again."},503);}
+ }
+ if(isAssetFileRoute&&request.method==="DELETE"){
+  if(!env.ASSET_BUCKET)return json({error:"Cloud asset storage is not configured yet."},503);
+  try{
+   const id=assetFileMatch?.[1]??"";
+   const record=await env.DB.prepare("SELECT storage_key FROM asset_catalogue WHERE id=? AND owner_id=?").bind(id,userSubject).first<{storage_key:string|null}>();
+   if(!record)return json({error:"Asset not found for this account."},404);
+   if(record.storage_key)await env.ASSET_BUCKET.delete(record.storage_key);
+   await env.DB.prepare("UPDATE asset_catalogue SET storage_backend=NULL,storage_key=NULL,updated_at=? WHERE id=? AND owner_id=?").bind(now(),id,userSubject).run();
+   return json({deleted:true,id});
+  }catch{return json({error:"Could not remove cloud asset file."},503);}
  }
  if(url.pathname==="/api/assets/register"&&request.method==="POST"){
   try{
