@@ -5,7 +5,7 @@ type Kind="player"|"platform"|"coin"|"enemy"|"goal";
 type Layer="Gameplay"|"Environment"|"Collectibles"|"Logic";
 type GameObject={id:string;kind:Kind;x:number;y:number;w:number;h:number;color:string;label:string;layer:Layer;speed?:number;animated?:boolean};
 type Tile={id:string;x:number;y:number;color:string;solid:boolean};
-type SceneData={format:string;version:number;width:number;height:number;background:string;objects:GameObject[];tiles:Tile[];tileSize:number;events?:{coin:string;goal:string;enemy:string}};
+type SceneData={format:string;version:number;width:number;height:number;background:string;objects:GameObject[];tiles:Tile[];tileSize:number;events?:{coin?:string;goal?:string;enemy?:string}};
 const W=900,H=520,GRID=30;
 const palette:Record<Kind,{color:string;w:number;h:number;label:string;layer:Layer}>={player:{color:"#65d8ef",w:30,h:42,label:"Player",layer:"Gameplay"},platform:{color:"#b98a62",w:120,h:20,label:"Platform",layer:"Environment"},coin:{color:"#f5c84c",w:20,h:20,label:"Coin",layer:"Collectibles"},enemy:{color:"#e66d78",w:34,h:32,label:"Enemy",layer:"Gameplay"},goal:{color:"#8bd49a",w:38,h:58,label:"Goal",layer:"Logic"}};
 const starterObjects:GameObject[]=[{id:"player-start",kind:"player",x:90,y:438,...palette.player},{id:"ground",kind:"platform",x:0,y:480,w:900,h:40,color:"#80644e",label:"Ground",layer:"Environment"},{id:"platform-1",kind:"platform",x:260,y:380,...palette.platform},{id:"platform-2",kind:"platform",x:480,y:310,w:110,h:20,color:"#b98a62",label:"Platform",layer:"Environment"},{id:"coin-1",kind:"coin",x:310,y:330,...palette.coin},{id:"coin-2",kind:"coin",x:525,y:260,...palette.coin},{id:"enemy-1",kind:"enemy",x:650,y:448,...palette.enemy,speed:1.1},{id:"goal-1",kind:"goal",x:820,y:422,...palette.goal}];
