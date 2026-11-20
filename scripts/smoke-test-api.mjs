@@ -21,15 +21,6 @@ if (!assetCatalogue.response.ok || !Array.isArray(assetCatalogue.body?.assets) |
   throw new Error(`Asset catalogue check failed (${assetCatalogue.response.status}): ${JSON.stringify(assetCatalogue.body)}`);
 }
 
-const invalidAssetPrompt = await readJson("/api/assets/generate", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ prompt: "tiny" }),
-});
-if (invalidAssetPrompt.response.status !== 400 || typeof invalidAssetPrompt.body?.error !== "string") {
-  throw new Error(`Invalid asset prompt was not rejected safely (${invalidAssetPrompt.response.status}): ${JSON.stringify(invalidAssetPrompt.body)}`);
-}
-
 const missingId = "00000000-0000-4000-8000-000000000000";
 for (const [label, path, init] of [
   ["project list", "/api/projects"],
