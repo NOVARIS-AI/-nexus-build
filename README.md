@@ -65,6 +65,10 @@ npm run preview
 
 The project targets open-source tools and free tiers. Free tiers have limits and can change. Unlimited hosted AI generation, cloud builds and hosting cannot be promised at a zero budget. Heavy local 3D processing may require a computer; the mobile-friendly web studio is being built first.
 
+## Generation task account isolation
+
+Generation tasks are also tied to the verified Cloudflare Access subject. Task lists only return the signed-in creator's tasks, task updates require both task ID and owner ID, and image/3D/world generation writes task records under the authenticated owner. Existing task rows are retained with `legacy-unassigned` ownership and are intentionally excluded from signed-in task lists; they are not automatically reassigned.
+
 ## Project account isolation
 
 Saved project endpoints require a verified Cloudflare Access identity. The Worker validates the `Cf-Access-Jwt-Assertion` signature, issuer, audience, expiry, and subject, then filters every project read, update, and delete by that subject.
