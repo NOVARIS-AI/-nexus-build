@@ -213,8 +213,8 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
 
     <div className="npc-library-note npc-library-note-wide">
       <div className="npc-note-icon">✦</div>
-      <b>Growing the NPC catalogue</b>
-      <p>The resident index now contains 1,200+ profiles with streamed Ara 3D previews. Each generated resident opens in the in-app HumanForge 3D creator with an AI-selected starting appearance; Ara remains available as an alternate preview engine.</p>
+      <b>Expandable universal character library</b>
+      <p>The catalogue expands to 1,600+ profiles through its first 900-entry expansion: 500 existing profiles are reclassified and preserved in legacy backups, and 400 new non-human design templates are added. Human characters retain HumanForge previews; non-human entries open the reusable design studio. Finished meshes, sprites and animation sets are produced by a separate asset pipeline.</p>
     </div>
   </section>;
 }
