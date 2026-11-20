@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {assetApi} from "../api";
 
-type AssetRecord={id:string;name:string;type:string;size:number;updated:number;blob:Blob;prompt?:string;promptKey?:string;source?:string;model?:string};
+type AssetRecord={id:string;name:string;type:string;size:number;updated:number;blob:Blob;prompt?:string;promptKey?:string;source?:string;model?:string;pinned?:boolean;lastAccessed?:number};
 type Preview={url:string;prompt:string;taskId:string;mimeType:string;model:string;assetType:string;cacheHit:boolean};
 const DB_NAME="nexus-build-workspace",STORE="assets";
 const MODEL="@cf/black-forest-labs/flux-1-schnell";
