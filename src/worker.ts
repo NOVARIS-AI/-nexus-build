@@ -54,6 +54,14 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   userSubject=identity.subject;
   if(isProjectRoute)projectOwner=identity.subject;
  }
+ // The shared starter catalogue remains public. When a valid Access assertion
+ // is present, include the signed-in creator's private catalogue records too.
+ if(url.pathname==="/api/assets"&&request.method==="GET"&&request.headers.has("Cf-Access-Jwt-Assertion")){
+  if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Cloudflare Access authentication is not configured."},503);
+  const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
+  if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
+  userSubject=identity.subject;
+ }
  if(url.pathname==="/api/health"&&request.method==="GET"){
   try{
    const probe=await env.DB.prepare("SELECT 1 AS ok").first<{ok:number}>();
@@ -69,10 +77,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   try{
    const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(50,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
    const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim().slice(0,120),type=(url.searchParams.get("type")??"").trim();
-   const clauses:string[]=[],args:(string|number)[]=[];
+   const clauses:string[]=["(owner_id='legacy-shared' OR owner_id=?)"],args:(string|number)[]=[userSubject??"__anonymous__"];
    if(term){clauses.push("(name LIKE ? OR asset_type LIKE ? OR prompt LIKE ?)");args.push("%"+term+"%","%"+term+"%","%"+term+"%");}
    if(type){clauses.push("asset_type = ?");args.push(type);}
-   const where=clauses.length?" WHERE "+clauses.join(" AND "):"";
+   const where=" WHERE "+clauses.join(" AND ");
    const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM asset_catalogue"+where).bind(...args).first<{total:number}>();
    const rows=await env.DB.prepare("SELECT id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at FROM asset_catalogue"+where+" ORDER BY updated_at DESC LIMIT ? OFFSET ?").bind(...args,limit,offset).all();
    const total=count?.total??0,loaded=rows.results?.length??0;
@@ -90,7 +98,8 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const source=body.source==="workers-ai"?"workers-ai":"imported",model=(body.model??"").slice(0,120),license=(body.license??"user-supplied-or-model-terms").slice(0,160);
    const tags=Array.isArray(body.tags)?body.tags.filter((tag):tag is string=>typeof tag==="string").slice(0,24):[];
    const timestamp=now();
-   await env.DB.prepare("INSERT INTO asset_catalogue (id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,asset_type=excluded.asset_type,prompt=excluded.prompt,prompt_key=excluded.prompt_key,mime_type=excluded.mime_type,size_bytes=excluded.size_bytes,source=excluded.source,model=excluded.model,license=excluded.license,tags_json=excluded.tags_json,updated_at=excluded.updated_at").bind(idValue,name,assetType,prompt,promptKey,mimeType,sizeBytes,source,model,license,JSON.stringify(tags),timestamp,timestamp).run();
+   const saved=await env.DB.prepare("INSERT INTO asset_catalogue (id,owner_id,name,asset_type,prompt,prompt_key,mime_type,size_bytes,source,model,license,tags_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,asset_type=excluded.asset_type,prompt=excluded.prompt,prompt_key=excluded.prompt_key,mime_type=excluded.mime_type,size_bytes=excluded.size_bytes,source=excluded.source,model=excluded.model,license=excluded.license,tags_json=excluded.tags_json,updated_at=excluded.updated_at WHERE asset_catalogue.owner_id=excluded.owner_id").bind(idValue,userSubject,name,assetType,prompt,promptKey,mimeType,sizeBytes,source,model,license,JSON.stringify(tags),timestamp,timestamp).run();
+   if(!saved.meta?.changes)return json({error:"This asset ID is already owned by another catalogue entry. Choose a new ID."},409);
    return json({saved:true,id:idValue,source:"cloudflare-d1-metadata"},201);
   }catch(error){return json({error:error instanceof Error?error.message:"Could not register asset metadata."},503);}
  }
