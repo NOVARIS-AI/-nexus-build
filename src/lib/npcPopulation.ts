@@ -10,7 +10,11 @@ export type PopulationNpc = {
   routine: string;
   greeting: string;
   populationGenerated: true;
-  appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; dailySchedule?: string; behaviourNotes?: string; humanFeatures?: Record<string, boolean>; humanFoundationVersion?: number; humanConfig?: Partial<HumanConfig> };
+  characterFamily?: string;
+  species?: string;
+  visualStyle?: string;
+  assetStatus?: string;
+  appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; dailySchedule?: string; behaviourNotes?: string; humanFeatures?: Record<string, boolean>; humanFoundationVersion?: number; humanConfig?: Partial<HumanConfig>; characterFamily?: string; species?: string; visualStyle?: string; assetStatus?: string; characterDesign?: Record<string, unknown> };
   humanFeatures?: Record<string, boolean>;
 };
 
