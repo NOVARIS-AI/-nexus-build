@@ -108,10 +108,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const imageResult=await env.AI.run("@cf/black-forest-labs/flux-1-schnell",{prompt,steps:4});
    const image=imageResult.image;
    if(typeof image!=="string"||image.length<100||image.length>12000000)throw new Error("Image generation returned an invalid or oversized result.");
-   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=? AND owner_id=? AND owner_id=?").bind(JSON.stringify({assetType,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",prompt}),now(),taskId,userSubject).run();
+   await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=? AND owner_id=?").bind(JSON.stringify({assetType,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",prompt}),now(),taskId,userSubject).run();
    return json({imageDataUrl:"data:image/jpeg;base64,"+image,mimeType:"image/jpeg",model:"@cf/black-forest-labs/flux-1-schnell",taskId,assetType,source:"cloudflare-workers-ai"},201);
   }catch(error){
-   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=? AND owner_id=? AND owner_id=?").bind(error instanceof Error?error.message:"Image generation failed.",now(),taskId,userSubject).run();}catch{}}
+   if(taskId){try{await env.DB.prepare("UPDATE generation_tasks SET status='failed',error=?,updated_at=? WHERE id=? AND owner_id=?").bind(error instanceof Error?error.message:"Image generation failed.",now(),taskId,userSubject).run();}catch{}}
    return json({error:error instanceof Error?error.message:"AI image generation is temporarily unavailable."},503);
   }
  }
