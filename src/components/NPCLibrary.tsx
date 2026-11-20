@@ -2,6 +2,7 @@ import type { HumanConfig } from "humanforge/human";
 import { useCallback, useEffect, useRef, useState } from "react";
 import HumanForgeStudio from "./HumanForgeStudio";
 import NPCProductionHub from "./NPCProductionHub";
+import CharacterTemplateStudio from "./CharacterTemplateStudio";
 import { getAraCharacterAppearance } from "../lib/npcHumanFoundation";
 import { loadAraEngine } from "../lib/araEngine";
 
@@ -219,15 +220,17 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
 }
 
 
-export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string } } | null; onBack?: () => void }) {
+export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id: string; name: string; role: string; personality?: string; routine?: string; appearance?: { preset?: string; outfit?: string; shoes?: string; carry?: string; description?: string; characterFamily?: string; species?: string; visualStyle?: string; assetStatus?: string; characterDesign?: Record<string, unknown> } } | null; onBack?: () => void }) {
   const [studio, setStudio] = useState<"humanforge" | "ara">("humanforge");
   return <section className="npc-library-shell">
     {selectedNpc && <button type="button" className="npc-library-back" onClick={onBack}>← Back to NPC Library</button>}
-    <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
-      <button type="button" role="tab" aria-selected={studio === "humanforge"} className={studio === "humanforge" ? "active" : ""} onClick={() => setStudio("humanforge")}>In-app Human Creator</button>
-      <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>
-    </div>
-    {studio === "humanforge" ? <HumanForgeStudio selectedNpc={selectedNpc} /> : <AraCharacterStudio selectedNpc={selectedNpc} />}
+    {selectedNpc?.appearance?.characterFamily && selectedNpc.appearance.characterFamily !== "humanoid" ? <CharacterTemplateStudio selectedNpc={selectedNpc} /> : <>
+      <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
+        <button type="button" role="tab" aria-selected={studio === "humanforge"} className={studio === "humanforge" ? "active" : ""} onClick={() => setStudio("humanforge")}>In-app Human Creator</button>
+        <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>
+      </div>
+      {studio === "humanforge" ? <HumanForgeStudio selectedNpc={selectedNpc} /> : <AraCharacterStudio selectedNpc={selectedNpc} />}
+    </>}
     <NPCProductionHub />
   </section>;
 }
