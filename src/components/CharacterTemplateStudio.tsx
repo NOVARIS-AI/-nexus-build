@@ -78,7 +78,8 @@ export default function CharacterTemplateStudio({ selectedNpc }: { selectedNpc: 
         setMessage("Design saved on this device. This scratch character has not been added to the shared catalogue.");
       } else {
         try {
-          await npcApi.saveDesign(selectedNpc.id, draft as unknown as Record<string, unknown>);
+          const { referenceImage: _referenceImage, ...shareableDesign } = draft;
+          await npcApi.saveDesign(selectedNpc.id, shareableDesign as unknown as Record<string, unknown>);
           setMessage("Design saved on this device and synced to the character catalogue.");
         } catch {
           setMessage("Design saved on this device. Cloud sync is unavailable until the catalogue accepts your signed-in session.");
