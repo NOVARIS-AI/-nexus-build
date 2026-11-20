@@ -29,6 +29,46 @@ async function ensureNpcCatalogue(db:D1Database){
  }
  for(let i=0;i<statements.length;i+=100) await db.batch(statements.slice(i,i+100));
 }
+
+const CHARACTER_FAMILIES=[
+ {key:"animal",label:"Animal",species:["Fox","Wolf","Lion","Elephant","Eagle","Owl","Deer","Otter","Crocodile","Dolphin","Giraffe","Panda","Leopard","Hawk","Turtle","Horse","Rabbit","Bear","Parrot","Whale"]},
+ {key:"creature",label:"Creature / Monster",species:["Moss Golem","Crystal Drake","Ember Wisp","Stone Troll","Moon Stag","Cave Mantis","Frost Serpent","Thunder Roc","Bog Sprite","Ash Hound","Void Crawler","Coral Beast","Sky Leviathan","Magma Beetle","Shadow Lynx"]},
+ {key:"fantasy",label:"Fantasy Species",species:["Elf","Dwarf","Orc","Goblin","Merfolk","Faun","Dryad","Centaur","Sylph","Gnome","Trollkin","Moonfolk","Dragonborn","Satyr","Fae"]},
+ {key:"robot",label:"Robot / Android",species:["Service Android","Scout Drone","Mech Pilot","Guardian Automaton","Repair Bot","Holo Assistant","Cargo Walker","Sentinel Unit","Companion Robot","Survey Mech","Rescue Android","Synth Engineer"]},
+ {key:"anthropomorphic",label:"Anthropomorphic",species:["Foxfolk","Wolfkin","Catfolk","Bearfolk","Rabbitfolk","Birdfolk","Otterfolk","Lionfolk","Deerfolk","Sharkfolk","Panda Folk","Lizardfolk"]},
+ {key:"alien",label:"Alien / Hybrid",species:["Nebula Nomad","Crystal Alien","Amphibian Visitor","Solar Nomad","Insectoid Scholar","Plasma Being","Comet Wanderer","Lunar Hybrid","Aquatic Alien","Starborn Traveller","Silicon Lifeform","Jungle Extraterrestrial"]}
+];
+const CHARACTER_STYLES=["anime","realistic-3d","cartoon","stylized-3d","pixel-art"];
+function characterSpec(index:number){
+ const family=CHARACTER_FAMILIES[index%CHARACTER_FAMILIES.length];
+ const species=family.species[Math.floor(index/CHARACTER_FAMILIES.length)%family.species.length];
+ return {family,species,style:CHARACTER_STYLES[index%CHARACTER_STYLES.length]};
+}
+async function ensureCharacterLibraryExpansion(db:D1Database){
+ const marker=await db.prepare("SELECT seed_key FROM character_library_seed_state WHERE seed_key=?").bind("character-expansion-v1").first<{seed_key:string}>();
+ if(marker)return;
+ const stamp=new Date().toISOString();
+ const legacyRows=await db.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json FROM npc_profiles WHERE id LIKE 'population-%' ORDER BY id LIMIT 500").all<any>();
+ const updates:D1Statement[]=[];
+ for(let i=0;i<(legacyRows.results??[]).length;i++){
+  const row=legacyRows.results![i],spec=characterSpec(i),suffix=String(i+1).padStart(3,"0");
+  let oldAppearance:Record<string,unknown>={};
+  try{const parsed=JSON.parse(String(row.appearance_json??"{}"));if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))oldAppearance=parsed;}catch{}
+  const legacy={name:row.name,role:row.role,dialogue:row.dialogue,personality:row.personality,routine:row.routine,greeting:row.greeting,appearance:oldAppearance};
+  const appearance={...oldAppearance,version:2,characterFamily:spec.family.key,species:spec.species,visualStyle:spec.style,assetStatus:"design-template",assetPipeline:"pending",templateComponents:["silhouette","body","head","eyes","materials","accessories"],legacyProfile:legacy};
+  updates.push(db.prepare("UPDATE npc_profiles SET name=?,role=?,personality='curious',routine='character-roaming',greeting='Hello! I am exploring this world.',dialogue='Every world has something new to discover.',appearance_json=?,character_family=?,species=?,visual_style=?,asset_status='design-template',legacy_profile_json=? WHERE id=?").bind(spec.species+" "+suffix,spec.family.label+" · "+spec.species,JSON.stringify(appearance),spec.family.key,spec.species,spec.style,JSON.stringify(legacy),row.id));
+ }
+ for(let i=0;i<updates.length;i+=100)await db.batch(updates.slice(i,i+100));
+ const inserts:D1Statement[]=[];
+ for(let i=0;i<400;i++){
+  const spec=characterSpec(i+500),number=String(i+1).padStart(4,"0"),id="character-expansion-20261120-"+number;
+  const appearance={version:2,characterFamily:spec.family.key,species:spec.species,visualStyle:spec.style,assetStatus:"design-template",assetPipeline:"pending",source:"nexus-original-template",templateComponents:["silhouette","body","head","eyes","materials","accessories"],customizable:true};
+  const x=((i*17)%41)-20,z=((i*29)%41)-20;
+  inserts.push(db.prepare("INSERT OR IGNORE INTO npc_profiles (id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,created_at,character_family,species,visual_style,asset_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,spec.species+" "+String(501+i).padStart(3,"0"),spec.family.label+" · "+spec.species,"I am ready to explore this world and discover its secrets.",x,z,2.8,"curious and expressive","character-roaming","Hello! Nice to meet you.",JSON.stringify(appearance),stamp,spec.family.key,spec.species,spec.style,"design-template"));
+ }
+ for(let i=0;i<inserts.length;i+=100)await db.batch(inserts.slice(i,i+100));
+ await db.prepare("INSERT OR REPLACE INTO character_library_seed_state (seed_key,completed_at) VALUES (?,?)").bind("character-expansion-v1",stamp).run();
+}
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const now=()=>new Date().toISOString();
 const validJsonText=(value:unknown,max:number):value is string=>typeof value==="string"&&value.length<=max&&(()=>{try{JSON.parse(value);return true;}catch{return false;}})();
@@ -226,6 +266,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    if(description.length<12)return json({error:"Please describe the NPC in at least 12 characters."},400);
    const category=(body.category??"All").trim();
    const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
+   const categoryFamilies:Record<string,string>={"Animals":"animal","Creatures & monsters":"creature","Fantasy species":"fantasy","Robots & androids":"robot","Anthropomorphic":"anthropomorphic","Aliens & hybrids":"alien"};
    const allowedRoles=categoryRoles[category]??roles;
    const prompt="Create one original, believable game NPC from this description. Return ONLY a valid JSON object, no markdown.\nDescription: "+description+"\nSelected category: "+category+"\nChoose role from this exact list: "+allowedRoles.join(", ")+".\nReturn keys: name, role, personality, routine, greeting, dialogue, appearanceDescription, preset, outfit, shoes, carry, dailySchedule, behaviourNotes.\nRules: name is a plausible full name; role must exactly match an allowed role; personality is a concise trait phrase; routine is a short setting/routine label; greeting is one natural sentence; dialogue is 2-3 natural sentences; appearanceDescription describes visible clothing, hair and accessories without claiming a unique generated mesh; preset must be one of The Female Executive, The Adventurer, The Detective, The Athlete; outfit, shoes and carry are 6-digit hex colours; dailySchedule and behaviourNotes are short and practical. Keep the character suitable for a general-audience game.";
    const generated=await env.AI.run("@cf/meta/llama-3.1-8b-instruct",{messages:[{role:"system",content:"You are a game character designer. Follow the schema exactly and return valid JSON only."},{role:"user",content:prompt}],max_tokens:850,temperature:0.75});
@@ -270,6 +311,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(url.pathname==="/api/npcs"&&request.method==="GET"){
   try{
    await ensureNpcCatalogue(env.DB);
+   await ensureCharacterLibraryExpansion(env.DB);
    const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(48,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
    const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim(),category=url.searchParams.get("category")??"All";
    const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
@@ -282,19 +324,23 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const expanded=[...new Set(meaningful.flatMap(token=>synonymGroups[token]??[token]))].slice(0,24);
    // Standard search requires all terms; description search accepts any indexed clue and ranks matches.
    const ftsQuery=expanded.map(token=>'"'+token.replace(/"/g,'""')+'"*').join(describe?" OR ":" AND ");
-   const selectedRoles=categoryRoles[category];
+   const selectedRoles=categoryRoles[category],selectedFamily=categoryFamilies[category];
    const roleClause=selectedRoles?" AND p.role IN ("+selectedRoles.map(()=>"?").join(",")+")":"";
-   const roleArgs:(string|number)[]=selectedRoles?[...selectedRoles]:[];
+   const familyClause=selectedFamily?" AND p.character_family=?":"";
+   const filterArgs:(string|number)[]=[...(selectedRoles??[]),...(selectedFamily?[selectedFamily]:[])];
    let count:{total:number}|null;
    let rows:D1Result;
    if(ftsQuery){
     const matchFrom=" FROM npc_profiles_fts JOIN npc_profiles p ON p.rowid=npc_profiles_fts.rowid WHERE npc_profiles_fts MATCH ?"+roleClause;
-    count=await env.DB.prepare("SELECT COUNT(*) AS total"+matchFrom).bind(ftsQuery,...roleArgs).first<{total:number}>();
-    rows=await env.DB.prepare("SELECT p.id,p.name,p.role,p.dialogue,p.x,p.z,p.radius,p.personality,p.routine,p.greeting,p.appearance_json,p.preview_url,p.model_url"+matchFrom+" ORDER BY bm25(npc_profiles_fts),p.id LIMIT ? OFFSET ?").bind(ftsQuery,...roleArgs,limit,offset).all();
+    count=await env.DB.prepare("SELECT COUNT(*) AS total"+matchFrom).bind(ftsQuery,...filterArgs).first<{total:number}>();
+    rows=await env.DB.prepare("SELECT p.id,p.name,p.role,p.dialogue,p.x,p.z,p.radius,p.personality,p.routine,p.greeting,p.appearance_json,p.preview_url,p.model_url,p.character_family,p.species,p.visual_style,p.asset_status"+matchFrom+" ORDER BY bm25(npc_profiles_fts),p.id LIMIT ? OFFSET ?").bind(ftsQuery,...roleArgs,limit,offset).all();
    }else{
-    const where=selectedRoles?" WHERE role IN ("+selectedRoles.map(()=>"?").join(",")+")":"";
-    count=await env.DB.prepare("SELECT COUNT(*) AS total FROM npc_profiles"+where).bind(...roleArgs).first<{total:number}>();
-    rows=await env.DB.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,preview_url,model_url FROM npc_profiles"+where+" ORDER BY id LIMIT ? OFFSET ?").bind(...roleArgs,limit,offset).all();
+    const filters:string[]=[];
+    if(selectedRoles)filters.push("role IN ("+selectedRoles.map(()=>"?").join(",")+")");
+    if(selectedFamily)filters.push("character_family=?");
+    const where=filters.length?" WHERE "+filters.join(" AND "):"";
+    count=await env.DB.prepare("SELECT COUNT(*) AS total FROM npc_profiles"+where).bind(...filterArgs).first<{total:number}>();
+    rows=await env.DB.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,preview_url,model_url,character_family,species,visual_style,asset_status FROM npc_profiles"+where+" ORDER BY id LIMIT ? OFFSET ?").bind(...filterArgs,limit,offset).all();
    }
    const total=count?.total??0,loaded=rows.results?.length??0;
    return json({npcs:rows.results??[],total,limit,offset,nextOffset:offset+loaded<total?offset+loaded:null,source:"cloudflare-d1",searchMode:describe?"description-match":ftsQuery?"fts5":"catalogue"});
