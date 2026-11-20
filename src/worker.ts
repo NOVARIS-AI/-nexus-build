@@ -42,7 +42,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  const isProjectRoute=url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/");
  const isTaskRoute=url.pathname==="/api/tasks"||url.pathname.startsWith("/api/tasks/");
  const isDirectorRevisionRoute=url.pathname==="/api/director/revisions";
- const assetFileMatch=url.pathname.match(/^\\/api\\/assets\\/file\\/([a-zA-Z0-9_-]{1,100})$/);
+ const assetFileMatch=url.pathname.match(/^\/api\/assets\/file\/([a-zA-Z0-9_-]{1,100})$/);
  const isAssetFileRoute=Boolean(assetFileMatch);
  const isProtectedWrite=
   (url.pathname==="/api/assets/register"&&request.method==="POST")||
