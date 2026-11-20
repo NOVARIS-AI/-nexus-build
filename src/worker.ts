@@ -42,8 +42,10 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  const isProjectRoute=url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/");
  const isTaskRoute=url.pathname==="/api/tasks"||url.pathname.startsWith("/api/tasks/");
  const isDirectorRevisionRoute=url.pathname==="/api/director/revisions";
- const assetFileMatch=url.pathname.match(/^\/api\/assets\/file\/([a-zA-Z0-9_-]{1,100})$/);
- const isAssetFileRoute=Boolean(assetFileMatch);
+  const assetFilePath=url.pathname.startsWith("/api/assets/file/")?url.pathname.slice("/api/assets/file/".length):"";
+  const assetFileId=/^[a-zA-Z0-9_-]{1,100}$/.test(assetFilePath)?assetFilePath:"";
+  const assetFileMatch=assetFileId?[url.pathname,assetFileId]:null;
+  const isAssetFileRoute=Boolean(assetFileMatch);
  const isProtectedWrite=
   (url.pathname==="/api/assets/register"&&request.method==="POST")||
   (url.pathname==="/api/assets/upload"&&request.method==="POST")||
@@ -98,7 +100,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(isAssetFileRoute&&request.method==="GET"){
   if(!env.ASSET_BUCKET)return json({error:"Cloud asset storage is not configured yet. Add the ASSET_BUCKET R2 binding."},503);
   try{
-   const id=assetFileMatch?.[1]??"";
+   const id=assetFileId;
    const record=await env.DB.prepare("SELECT name,mime_type,storage_backend,storage_key FROM asset_catalogue WHERE id=? AND owner_id=?").bind(id,userSubject).first<{name:string;mime_type:string;storage_backend:string|null;storage_key:string|null}>();
    if(!record||record.storage_backend!=="r2"||!record.storage_key)return json({error:"Cloud asset file not found for this account."},404);
    const object=await env.ASSET_BUCKET.get(record.storage_key);if(!object)return json({error:"Cloud asset binary is missing."},404);
@@ -125,7 +127,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(isAssetFileRoute&&request.method==="DELETE"){
   if(!env.ASSET_BUCKET)return json({error:"Cloud asset storage is not configured yet."},503);
   try{
-   const id=assetFileMatch?.[1]??"";
+   const id=assetFileId;
    const record=await env.DB.prepare("SELECT storage_key FROM asset_catalogue WHERE id=? AND owner_id=?").bind(id,userSubject).first<{storage_key:string|null}>();
    if(!record)return json({error:"Asset not found for this account."},404);
    if(record.storage_key)await env.ASSET_BUCKET.delete(record.storage_key);
