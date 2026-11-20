@@ -39,6 +39,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  let userSubject: string | null = null;
  const isProjectRoute=url.pathname==="/api/projects"||url.pathname.startsWith("/api/projects/");
  const isTaskRoute=url.pathname==="/api/tasks"||url.pathname.startsWith("/api/tasks/");
+ const isDirectorRevisionRoute=url.pathname==="/api/director/revisions";
  const isProtectedWrite=
   (url.pathname==="/api/assets/register"&&request.method==="POST")||
   (url.pathname==="/api/assets/generate"&&request.method==="POST")||
@@ -46,8 +47,9 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   (url.pathname==="/api/npcs/generate"&&request.method==="POST")||
   (url.pathname==="/api/world/generate"&&request.method==="POST")||
   (url.pathname==="/api/director/plan"&&request.method==="POST")||
+  (url.pathname==="/api/director/revisions"&&request.method==="POST")||
   (url.pathname.startsWith("/api/npcs/")&&url.pathname.endsWith("/character")&&request.method==="PUT");
- if(isProjectRoute||isTaskRoute||isProtectedWrite){
+ if(isProjectRoute||isTaskRoute||isProtectedWrite||isDirectorRevisionRoute){
   if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return json({error:"Cloudflare Access authentication is not configured."},503);
   const identity=await verifyCloudflareAccess(request,env.ACCESS_TEAM_DOMAIN,env.ACCESS_AUD);
   if(!identity)return json({error:"Authentication required. Sign in through Cloudflare Access."},401);
@@ -78,7 +80,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
    const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(50,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
    const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim().slice(0,120),type=(url.searchParams.get("type")??"").trim();
    const clauses:string[]=["(owner_id='legacy-shared' OR owner_id=?)"],args:(string|number)[]=[userSubject??"__anonymous__"];
-   if(term){clauses.push("(name LIKE ? OR asset_type LIKE ? OR prompt LIKE ?)");args.push("%"+term+"%","%"+term+"%","%"+term+"%");}
+   if(term){clauses.push("(name LIKE ? OR asset_type LIKE ? OR prompt LIKE ? OR prompt_key LIKE ? OR tags_json LIKE ?)");args.push("%"+term+"%","%"+term+"%","%"+term+"%","%"+term+"%","%"+term+"%");}
    if(type){clauses.push("asset_type = ?");args.push(type);}
    const where=" WHERE "+clauses.join(" AND ");
    const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM asset_catalogue"+where).bind(...args).first<{total:number}>();
@@ -263,6 +265,26 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   try{await env.DB.prepare("UPDATE generation_tasks SET status='completed',result_json=?,updated_at=? WHERE id=? AND owner_id=?").bind(result,now(),taskId,userSubject).run();}
   catch{return json({error:"World was generated but its task record could not be saved. Please retry."},503);}
   return json({world,source,taskId,objectCount:world.objects.length,validated:validateWorldPlan(world).length===0});
+ }
+ if(url.pathname==="/api/director/revisions"&&request.method==="GET"){
+  try{
+   const rawLimit=Number(url.searchParams.get("limit")??20),limit=Math.max(1,Math.min(50,Number.isFinite(rawLimit)?Math.floor(rawLimit):20));
+   const rows=await env.DB.prepare("SELECT id,task_id,title,blueprint_json,created_at FROM blueprint_revisions WHERE owner_id=? ORDER BY created_at DESC LIMIT ?").bind(userSubject,limit).all();
+   return json({revisions:(rows.results??[]).map((row:any)=>({id:row.id,taskId:row.task_id,title:row.title,blueprint:JSON.parse(String(row.blueprint_json)),createdAt:row.created_at}))});
+  }catch{return json({error:"Could not load blueprint revision history."},503);}
+ }
+ if(url.pathname==="/api/director/revisions"&&request.method==="POST"){
+  let body:{taskId?:string;blueprint?:unknown};
+  try{body=await request.json();}catch{return json({error:"Send a valid blueprint revision."},400);}
+  if(!body.blueprint||validateBlueprint(body.blueprint).length)return json({error:"Only a valid game blueprint can be saved to revision history."},400);
+  const blueprint=body.blueprint as GameBlueprint,serialized=JSON.stringify(blueprint);
+  if(serialized.length>180000)return json({error:"Blueprint is too large to save in revision history."},413);
+  const id=crypto.randomUUID(),stamp=now(),taskId=typeof body.taskId==="string"?body.taskId.slice(0,80):"";
+  try{
+   await env.DB.prepare("INSERT INTO blueprint_revisions (id,owner_id,task_id,title,blueprint_json,created_at) VALUES (?,?,?,?,?,?)").bind(id,userSubject,taskId,blueprint.title.slice(0,80),serialized,stamp).run();
+   await env.DB.prepare("DELETE FROM blueprint_revisions WHERE owner_id=? AND id NOT IN (SELECT id FROM blueprint_revisions WHERE owner_id=? ORDER BY created_at DESC LIMIT 50)").bind(userSubject,userSubject).run();
+   return json({revision:{id,taskId,title:blueprint.title,blueprint,createdAt:stamp}},201);
+  }catch{return json({error:"Could not save blueprint revision. Apply migration 0010 and retry."},503);}
  }
  if(url.pathname==="/api/director/plan"&&request.method==="POST"){
   let body:{prompt?:string;engine?:EngineId;refinement?:string;refinementTarget?:string;existingBlueprint?:unknown};

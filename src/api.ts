@@ -39,6 +39,12 @@ export const npcApi={
 };
 
 
+export type BlueprintRevision={id:string;taskId:string;title:string;blueprint:import("./lib/nexusCore").GameBlueprint;createdAt:string};
+export const directorApi={
+ listRevisions:async(limit=20)=> (await request<{revisions:BlueprintRevision[]}>(`/api/director/revisions?limit=${limit}`)).revisions,
+ saveRevision:async(blueprint:import("./lib/nexusCore").GameBlueprint,taskId="")=> (await request<{revision:BlueprintRevision}>("/api/director/revisions",{method:"POST",body:JSON.stringify({blueprint,taskId})})).revision
+};
+
 export type AssetCatalogueRecord={id:string;name:string;asset_type:string;prompt:string;prompt_key:string;mime_type:string;size_bytes:number;source:string;model:string;license:string;tags_json:string;created_at:string;updated_at:string};
 export type GeneratedImageAsset={imageDataUrl:string;mimeType:string;model:string;taskId:string;assetType:string;source:string};
 export const assetApi={

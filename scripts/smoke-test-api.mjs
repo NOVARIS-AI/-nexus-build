@@ -42,6 +42,8 @@ for (const [label, path, init] of [
   ["3D asset generation", "/api/assets/generate-3d", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A detailed low-poly wooden treasure chest." }) }],
   ["NPC generation", "/api/npcs/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ description: "A friendly shopkeeper in a busy market." }) }],
   ["world generation", "/api/world/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A small village with homes, roads and trees.", biome: "village", size: "compact" }) }],
+  ["AI Director revision history", "/api/director/revisions"],
+  ["AI Director revision save", "/api/director/revisions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ blueprint: {} }) }],
   ["AI Director planning", "/api/director/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "A small exploration game with puzzles." }) }],
 ]) {
   const result = await readJson(path, init);
@@ -52,4 +54,4 @@ for (const [label, path, init] of [
 
 console.log("Protected task and generation endpoints correctly reject unauthenticated requests.");
 
-console.log("API smoke tests passed: health, NPC catalogue, asset catalogue, project authentication, persistent tasks and generated world scene.");
+console.log("API smoke tests passed: health, NPC catalogue, searchable asset metadata, revision-history authentication, project authentication, persistent tasks and generated world scene.");
