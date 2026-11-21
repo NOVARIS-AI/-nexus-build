@@ -214,7 +214,7 @@ function AraCharacterStudio({ selectedNpc }: { selectedNpc?: { id: string; name:
     <div className="npc-library-note npc-library-note-wide">
       <div className="npc-note-icon">✦</div>
       <b>Expandable universal character library</b>
-      <p>The catalogue expands to 1,600+ profiles through its first 900-entry expansion: 500 existing profiles are reclassified and preserved in legacy backups, and 400 new non-human design templates are added. Human characters retain HumanForge previews; non-human entries open the reusable design studio. Finished meshes, sprites and animation sets are produced by a separate asset pipeline.</p>
+      <p>This studio updates existing NPC profiles in place. The current stage focuses on appearance redesign and preserves each NPC’s gameplay role and dialogue. New NPC creation is reserved for a later stage.</p>
     </div>
   </section>;
 }
