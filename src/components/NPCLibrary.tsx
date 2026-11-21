@@ -224,7 +224,7 @@ export default function NPCLibrary({ selectedNpc, onBack }: { selectedNpc?: { id
   const [studio, setStudio] = useState<"humanforge" | "ara">("humanforge");
   return <section className="npc-library-shell">
     {selectedNpc && <button type="button" className="npc-library-back" onClick={onBack}>← Back to NPC Library</button>}
-    {selectedNpc?.appearance?.characterFamily && selectedNpc.appearance.characterFamily !== "humanoid" ? <CharacterTemplateStudio selectedNpc={selectedNpc} /> : <>
+    {selectedNpc ? <CharacterTemplateStudio selectedNpc={selectedNpc} /> : <>
       <div className="npc-studio-switch" role="tablist" aria-label="Character creator">
         <button type="button" role="tab" aria-selected={studio === "humanforge"} className={studio === "humanforge" ? "active" : ""} onClick={() => setStudio("humanforge")}>In-app Human Creator</button>
         <button type="button" role="tab" aria-selected={studio === "ara"} className={studio === "ara" ? "active" : ""} onClick={() => setStudio("ara")}>Ara 3D Studio</button>

@@ -29,7 +29,7 @@ type DesignDraft = {
 };
 
 const families = [
-  ["animal", "Animal"], ["creature", "Creature / Monster"], ["fantasy", "Fantasy Species"],
+  ["humanoid", "Humanoid"], ["animal", "Animal"], ["creature", "Creature / Monster"], ["fantasy", "Fantasy Species"],
   ["robot", "Robot / Android"], ["anthropomorphic", "Anthropomorphic"], ["alien", "Alien / Hybrid"],
 ] as const;
 const styles = [
@@ -42,8 +42,8 @@ const defaultDraft = (npc: CharacterProfile): DesignDraft => {
     typeof saved[key] === "string" ? String(saved[key]) : fallback;
   return {
     name: read("name", npc.name),
-    characterFamily: read("characterFamily", npc.appearance?.characterFamily ?? "animal"),
-    species: read("species", npc.appearance?.species ?? npc.role.split(" · ").slice(1).join(" · ") ?? "Original species"),
+    characterFamily: read("characterFamily", npc.appearance?.characterFamily ?? "humanoid"),
+    species: read("species", npc.appearance?.species ?? "Human"),
     visualStyle: read("visualStyle", npc.appearance?.visualStyle ?? "stylized-3d"),
     primaryColor: read("primaryColor", "#8a9a74"),
     secondaryColor: read("secondaryColor", "#d6c5a5"),
@@ -129,8 +129,8 @@ export default function CharacterTemplateStudio({ selectedNpc }: { selectedNpc: 
   const familyLabel = families.find(([value]) => value === draft.characterFamily)?.[1] ?? "Custom character";
   return <section className="npc-library" style={{ display: "grid", gap: 18 }}>
     <div className="npc-library-head">
-      <div><div className="eyebrow">UNIVERSAL CHARACTER WORKSHOP</div><h2>{draft.name || selectedNpc.name}</h2><p>{familyLabel} · {draft.species} · Reusable visual design template</p></div>
-      <span className="npc-library-count">DESIGN TEMPLATE</span>
+      <div><div className="eyebrow">EXISTING NPC REDESIGN WORKSHOP</div><h2>{draft.name || selectedNpc.name}</h2><p>{familyLabel} · {draft.species} · Reusable visual design template</p></div>
+      <span className="npc-library-count">EXISTING NPC · {selectedNpc.id}</span>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16 }}>
       <article className="npc-asset-card" style={{ minWidth: 0 }}>
@@ -153,6 +153,6 @@ export default function CharacterTemplateStudio({ selectedNpc }: { selectedNpc: 
         <p className="npc-editor-message" role="status">{message}</p>
       </aside>
     </div>
-    <div className="npc-library-note npc-library-note-wide"><div className="npc-note-icon">✦</div><b>Asset-production status: design template</b><p>This entry contains reusable design metadata, not a finished sprite, rigged 3D mesh or animation set yet. The future 2D/3D production pipeline can turn approved designs into those assets. You can already customise, save and export this design pack.</p></div>
+    <div className="npc-library-note npc-library-note-wide"><div className="npc-note-icon">✦</div><b>Stage 1 · Redesign an existing NPC</b><p>Saving updates this NPC record in place. It does not create another NPC or duplicate the catalogue entry. This stage stores the approved appearance brief and design controls; finished sprites, 3D models and animation come in later stages.</p></div>
   </section>;
 }

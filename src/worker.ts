@@ -39,35 +39,37 @@ const CHARACTER_FAMILIES=[
  {key:"alien",label:"Alien / Hybrid",species:["Nebula Nomad","Crystal Alien","Amphibian Visitor","Solar Nomad","Insectoid Scholar","Plasma Being","Comet Wanderer","Lunar Hybrid","Aquatic Alien","Starborn Traveller","Silicon Lifeform","Jungle Extraterrestrial"]}
 ];
 const CHARACTER_STYLES=["anime","realistic-3d","cartoon","stylized-3d","pixel-art"];
-function characterSpec(index:number){
- const family=CHARACTER_FAMILIES[index%CHARACTER_FAMILIES.length];
- const species=family.species[Math.floor(index/CHARACTER_FAMILIES.length)%family.species.length];
- return {family,species,style:CHARACTER_STYLES[index%CHARACTER_STYLES.length]};
-}
-async function ensureCharacterLibraryExpansion(db:D1Database){
- const marker=await db.prepare("SELECT seed_key FROM character_library_seed_state WHERE seed_key=?").bind("character-expansion-v1").first<{seed_key:string}>();
+async function ensureCharacterLibraryStageOne(db:D1Database){
+ const seedKey="character-library-stage1-reset-v1";
+ const marker=await db.prepare("SELECT seed_key FROM character_library_seed_state WHERE seed_key=?").bind(seedKey).first<{seed_key:string}>();
  if(marker)return;
- const stamp=new Date().toISOString();
- const legacyRows=await db.prepare("SELECT id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json FROM npc_profiles WHERE id LIKE 'population-%' AND legacy_profile_json IS NULL ORDER BY id LIMIT 500").all<any>();
+ // Roll back the premature 400-record expansion. These IDs were created only by
+ // the earlier expansion job; ordinary and user-created NPC records are untouched.
+ await db.prepare("DELETE FROM npc_profiles WHERE id LIKE 'character-expansion-20261120-%'").run();
+ // Restore the original profile data for the 500 existing NPCs that were previously
+ // reclassified. Keep legacy_profile_json as an audit backup for safe recovery.
+ const legacyRows=await db.prepare("SELECT id,legacy_profile_json FROM npc_profiles WHERE id LIKE 'population-%' AND legacy_profile_json IS NOT NULL ORDER BY id").all<{id:string;legacy_profile_json:string}>();
  const updates:D1Statement[]=[];
- for(let i=0;i<(legacyRows.results??[]).length;i++){
-  const row=legacyRows.results![i],spec=characterSpec(i),suffix=String(i+1).padStart(3,"0");
-  let oldAppearance:Record<string,unknown>={};
-  try{const parsed=JSON.parse(String(row.appearance_json??"{}"));if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))oldAppearance=parsed;}catch{}
-  const legacy={name:row.name,role:row.role,dialogue:row.dialogue,personality:row.personality,routine:row.routine,greeting:row.greeting,appearance:oldAppearance};
-  const appearance={...oldAppearance,version:2,characterFamily:spec.family.key,species:spec.species,visualStyle:spec.style,assetStatus:"design-template",assetPipeline:"pending",templateComponents:["silhouette","body","head","eyes","materials","accessories"],legacyProfile:legacy};
-  updates.push(db.prepare("UPDATE npc_profiles SET name=?,role=?,personality='curious',routine='character-roaming',greeting='Hello! I am exploring this world.',dialogue='Every world has something new to discover.',appearance_json=?,character_family=?,species=?,visual_style=?,asset_status='design-template',legacy_profile_json=? WHERE id=?").bind(spec.species+" "+suffix,spec.family.label+" · "+spec.species,JSON.stringify(appearance),spec.family.key,spec.species,spec.style,JSON.stringify(legacy),row.id));
+ for(const row of legacyRows.results??[]){
+  try{
+   const legacy=JSON.parse(row.legacy_profile_json) as Record<string,unknown>;
+   const oldAppearance=legacy.appearance&&typeof legacy.appearance==="object"&&!Array.isArray(legacy.appearance)?legacy.appearance:{};
+   updates.push(db.prepare("UPDATE npc_profiles SET name=?,role=?,dialogue=?,personality=?,routine=?,greeting=?,appearance_json=?,character_family='humanoid',species='human',visual_style='realistic-3d',asset_status='humanforge-template' WHERE id=?").bind(
+    String(legacy.name??"Character").slice(0,100),
+    String(legacy.role??"Community").slice(0,120),
+    String(legacy.dialogue??"").slice(0,2000),
+    String(legacy.personality??"").slice(0,120),
+    String(legacy.routine??"").slice(0,120),
+    String(legacy.greeting??"").slice(0,500),
+    JSON.stringify(oldAppearance),
+    row.id
+   ));
+  }catch{
+   // Leave an invalid legacy record untouched rather than overwriting it with guesses.
+  }
  }
  for(let i=0;i<updates.length;i+=100)await db.batch(updates.slice(i,i+100));
- const inserts:D1Statement[]=[];
- for(let i=0;i<400;i++){
-  const spec=characterSpec(i+500),number=String(i+1).padStart(4,"0"),id="character-expansion-20261120-"+number;
-  const appearance={version:2,characterFamily:spec.family.key,species:spec.species,visualStyle:spec.style,assetStatus:"design-template",assetPipeline:"pending",source:"nexus-original-template",templateComponents:["silhouette","body","head","eyes","materials","accessories"],customizable:true};
-  const x=((i*17)%41)-20,z=((i*29)%41)-20;
-  inserts.push(db.prepare("INSERT OR IGNORE INTO npc_profiles (id,name,role,dialogue,x,z,radius,personality,routine,greeting,appearance_json,created_at,character_family,species,visual_style,asset_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,spec.species+" "+String(501+i).padStart(3,"0"),spec.family.label+" · "+spec.species,"I am ready to explore this world and discover its secrets.",x,z,2.8,"curious and expressive","character-roaming","Hello! Nice to meet you.",JSON.stringify(appearance),stamp,spec.family.key,spec.species,spec.style,"design-template"));
- }
- for(let i=0;i<inserts.length;i+=100)await db.batch(inserts.slice(i,i+100));
- await db.prepare("INSERT OR REPLACE INTO character_library_seed_state (seed_key,completed_at) VALUES (?,?)").bind("character-expansion-v1",stamp).run();
+ await db.prepare("INSERT OR REPLACE INTO character_library_seed_state (seed_key,completed_at) VALUES (?,?)").bind(seedKey,new Date().toISOString()).run();
 }
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const now=()=>new Date().toISOString();
@@ -339,7 +341,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
  if(url.pathname==="/api/npcs"&&request.method==="GET"){
   try{
    await ensureNpcCatalogue(env.DB);
-   await ensureCharacterLibraryExpansion(env.DB);
+   await ensureCharacterLibraryStageOne(env.DB);
    const rawLimit=Number(url.searchParams.get("limit")??24),limit=Math.max(1,Math.min(48,Number.isFinite(rawLimit)?Math.floor(rawLimit):24));
    const offset=Math.max(0,Math.floor(Number(url.searchParams.get("offset")??0)||0)),term=(url.searchParams.get("q")??"").trim(),category=url.searchParams.get("category")??"All";
    const categoryRoles:Record<string,string[]>={Business:["Shopkeeper","Food vendor","Market trader","Chef","Receptionist"],Education:["Teacher","Student","Librarian"],Healthcare:["Nurse","Doctor"],Transport:["Bus driver","Delivery rider"],Creative:["Artist","Musician","Photographer","Hair stylist","Barber","Designer","Journalist"],"Skilled trades":["Mechanic","Tailor","Engineer","Electrician","Plumber","Builder","Farmer","Gardener"],"Public services":["Security officer","Cleaner"],Community:["Community volunteer"]};
