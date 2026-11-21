@@ -261,6 +261,7 @@ export default { async fetch(request:Request,env:Env):Promise<Response>{
   }
  }
  if(url.pathname==="/api/npcs/generate"&&request.method==="POST"){
+  if(env.NPC_CREATION_ENABLED!=="true")return json({error:"New NPC creation is paused while the existing character library is being redesigned."},409);
   try{
    let body:{description?:string;category?:string};
    try{body=await request.json();}catch{return json({error:"Send a valid NPC description."},400);}
